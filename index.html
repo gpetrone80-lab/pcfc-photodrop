@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PCFC Photo Drop — Pinellas County Fire Conference</title>
+<meta name="description" content="Were you at the Pinellas County Fire Conference? Drop your photos here!">
+<style>
+  :root{
+    --gold:#f2b234; --gold-soft:#ffd166; --red:#d7263d;
+    --bg:#0b0b0e; --panel:#15151b; --line:#2a2a33; --text:#f4f1ea; --muted:#a9a49a;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%, #2a1408 0%, var(--bg) 55%) fixed, var(--bg);
+    color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+  }
+  .wrap{width:100%; max-width:560px; margin:0 auto; padding:28px 0 48px;}
+  header{text-align:center; margin-bottom:8px;}
+  header img{width:128px; height:128px; border-radius:50%; border:3px solid var(--gold);
+    box-shadow:0 0 32px rgba(242,178,52,.35); background:#000;}
+  h1{font-size:1.65rem; letter-spacing:.06em; margin:16px 0 4px; text-transform:uppercase;
+    background:linear-gradient(180deg,var(--gold-soft),var(--gold) 60%,#b97a12);
+    -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .sub{color:var(--muted); font-size:.95rem; margin:0 0 4px;}
+  .dates{color:var(--gold-soft); font-weight:700; letter-spacing:.12em; font-size:.8rem; margin:10px 0 0;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:22px 18px; margin-top:22px; box-shadow:0 8px 30px rgba(0,0,0,.45);}
+  .card h2{margin:0 0 6px; font-size:1.1rem;}
+  .card p{color:var(--muted); font-size:.92rem; line-height:1.5; margin:0 0 14px;}
+  label.drop{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+    border:2px dashed #4a4a55; border-radius:14px; padding:34px 16px; cursor:pointer;
+    transition:border-color .2s, background .2s; text-align:center; font-weight:600;
+  }
+  label.drop:hover, label.drop:active{border-color:var(--gold); background:rgba(242,178,52,.06);}
+  label.drop .icon{font-size:2.2rem;}
+  label.drop small{color:var(--muted); font-weight:400;}
+  input[type=file]{display:none;}
+  button{
+    width:100%; margin-top:14px; padding:15px; font-size:1.05rem; font-weight:800; letter-spacing:.04em;
+    color:#1a1206; background:linear-gradient(180deg,var(--gold-soft),var(--gold));
+    border:none; border-radius:12px; cursor:pointer;
+  }
+  button:disabled{opacity:.45; cursor:default;}
+  #list{margin-top:16px; display:flex; flex-direction:column; gap:10px;}
+  .file{background:#0e0e13; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:.85rem;}
+  .file .row{display:flex; justify-content:space-between; gap:8px; margin-bottom:6px;}
+  .file .name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .file .pct{color:var(--gold-soft); font-variant-numeric:tabular-nums;}
+  .bar{height:6px; background:#26262e; border-radius:4px; overflow:hidden;}
+  .bar i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--gold),var(--red)); transition:width .15s;}
+  .file.done{border-color:#2f7d4f;}
+  .file.done .pct{color:#7be3a0;}
+  .file.err{border-color:var(--red);}
+  .file.err .pct{color:#ff8a8a;}
+  #done{display:none; margin-top:16px; background:#0f2a1a; border:1px solid #2f7d4f; color:#bdf0cd;
+    border-radius:12px; padding:14px; text-align:center; font-weight:600;}
+  footer{margin-top:30px; text-align:center; color:var(--muted); font-size:.78rem; line-height:1.6;}
+  footer a{color:var(--gold-soft);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="logo.jpg" alt="Pinellas County Fire Conference logo">
+    <h1>PCFC Photo Drop</h1>
+    <p class="sub">Were you at the conference? Share the moments you captured.</p>
+    <p class="dates">OCTOBER 26&ndash;28 &bull; PINELLAS COUNTY, FL</p>
+  </header>
+
+  <div class="card">
+    <h2>📸 Drop your photos</h2>
+    <p>Tap below, pick photos from your phone, and hit upload. No account, no sign-in &mdash; it just works. Your shots may be featured on our social pages!</p>
+    <label class="drop" for="files">
+      <span class="icon">🔥</span>
+      <span>Choose photos from your phone</span>
+      <small>JPG / PNG / HEIC &bull; up to 15&nbsp;MB each</small>
+    </label>
+    <input type="file" id="files" accept="image/*" multiple>
+    <button id="upload" disabled>Select photos to begin</button>
+    <div id="list"></div>
+    <div id="done">✅ All photos uploaded &mdash; thank you for sharing the fire! 🔥</div>
+  </div>
+
+  <footer>
+    Pinellas County Fire Conference &bull; Hosted by local training chiefs &amp; instructors<br>
+    Follow us: <a href="https://www.instagram.com/pinellascountyfireconference/">Instagram</a> &bull;
+    <a href="https://www.facebook.com/">Facebook</a>
+  </footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script>
+/* ── Firebase config — paste your project's web config below ── */
+const firebaseConfig = {
+  apiKey: "PASTE_YOUR_API_KEY",
+  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
+  projectId: "PASTE_YOUR_PROJECT_ID",
+  storageBucket: "PASTE_YOUR_PROJECT.appspot.com",
+  messagingSenderId: "PASTE_SENDER_ID",
+  appId: "PASTE_APP_ID"
+};
+const READY = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY";
+if (READY) { firebase.initializeApp(firebaseConfig); }
+const storage = READY ? firebase.storage() : null;
+
+const input = document.getElementById('files');
+const btn = document.getElementById('upload');
+const list = document.getElementById('list');
+const doneBox = document.getElementById('done');
+let queue = [];
+
+input.addEventListener('change', () => {
+  queue = [...input.files].filter(f => f.type.startsWith('image/'));
+  list.innerHTML = ''; doneBox.style.display = 'none';
+  if (!queue.length) { btn.disabled = true; btn.textContent = 'Select photos to begin'; return; }
+  btn.disabled = false;
+  btn.textContent = `Upload ${queue.length} photo${queue.length > 1 ? 's' : ''} 🔥`;
+  queue.forEach(f => {
+    const d = document.createElement('div');
+    d.className = 'file';
+    d.innerHTML = `<div class="row"><span class="name">${f.name}</span><span class="pct">waiting</span></div><div class="bar"><i></i></div>`;
+    list.appendChild(d);
+  });
+});
+
+btn.addEventListener('click', async () => {
+  if (!READY) { alert('Uploads are not configured yet — please check back soon!'); return; }
+  btn.disabled = true; btn.textContent = 'Uploading…';
+  const rows = [...list.children];
+  let ok = 0;
+  for (let i = 0; i < queue.length; i++) {
+    const f = queue[i], row = rows[i];
+    const bar = row.querySelector('.bar i'), pct = row.querySelector('.pct');
+    try {
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const ref = storage.ref(`pcfc-2026/${stamp}_${safe}`);
+      const task = ref.put(f);
+      await new Promise((res, rej) => {
+        task.on('state_changed',
+          s => { const p = Math.round(s.bytesTransferred / s.totalBytes * 100);
+                 bar.style.width = p + '%'; pct.textContent = p + '%'; },
+          rej, res);
+      });
+      row.classList.add('done'); pct.textContent = 'uploaded ✓'; ok++;
+    } catch (e) {
+      row.classList.add('err'); pct.textContent = 'failed — try again';
+    }
+  }
+  btn.textContent = 'Select more photos';
+  btn.disabled = false; input.value = ''; queue = [];
+  if (ok === rows.length && ok > 0) doneBox.style.display = 'block';
+});
+</script>
+</body>
+</html>
