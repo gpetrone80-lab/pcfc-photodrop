@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Photo Admin — PCFC Photo Drop</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+  :root{
+    --gold:#f2b234; --gold-soft:#ffd166; --red:#d7263d;
+    --bg:#0b0b0e; --panel:#15151b; --line:#2a2a33; --text:#f4f1ea; --muted:#a9a49a;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%, #2a1408 0%, var(--bg) 55%) fixed, var(--bg);
+    color:var(--text); min-height:100vh; padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+  }
+  .wrap{width:100%; max-width:900px; margin:0 auto; padding:28px 0 48px;}
+  header{text-align:center; margin-bottom:8px;}
+  header img{width:88px; height:88px; border-radius:50%; border:3px solid var(--gold);
+    box-shadow:0 0 24px rgba(242,178,52,.35); background:#000;}
+  h1{font-size:1.4rem; letter-spacing:.06em; margin:14px 0 4px; text-transform:uppercase;
+    background:linear-gradient(180deg,var(--gold-soft),var(--gold) 60%,#b97a12);
+    -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .sub{color:var(--muted); font-size:.9rem; margin:0;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:22px 18px; margin:22px auto 0; max-width:420px; box-shadow:0 8px 30px rgba(0,0,0,.45);}
+  .card h2{margin:0 0 12px; font-size:1.05rem;}
+  .card p{color:var(--muted); font-size:.9rem; line-height:1.5; margin:0 0 12px;}
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:.82rem; color:var(--muted); margin-bottom:6px;}
+  .field input{width:100%; padding:13px; font-size:1rem; border-radius:10px;
+    border:1px solid var(--line); background:#0e0e13; color:var(--text);}
+  .field input:focus{outline:none; border-color:var(--gold);}
+  button{
+    width:100%; padding:15px; font-size:1.02rem; font-weight:800; letter-spacing:.04em;
+    color:#1a1206; background:linear-gradient(180deg,var(--gold-soft),var(--gold));
+    border:none; border-radius:12px; cursor:pointer;
+  }
+  button:disabled{opacity:.45; cursor:default;}
+  button.ghost{background:none; border:1px solid var(--line); color:var(--muted);
+    width:auto; padding:9px 16px; font-size:.85rem; font-weight:600;}
+  #err{display:none; margin-top:12px; background:#2a0f14; border:1px solid var(--red);
+    color:#ffb3b3; border-radius:10px; padding:12px; font-size:.88rem;}
+  #gallery{display:none;}
+  .toolbar{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:22px 0 14px;}
+  .toolbar .count{color:var(--muted); font-size:.9rem;}
+  .toolbar .actions{display:flex; gap:8px;}
+  #grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px;}
+  #grid a{display:block; border-radius:10px; overflow:hidden; border:1px solid var(--line);
+    background:#0e0e13; aspect-ratio:1; cursor:pointer;}
+  #grid img{width:100%; height:100%; object-fit:cover; display:block;}
+  #empty{display:none; text-align:center; color:var(--muted); padding:40px 0;}
+  #gerr{display:none; margin:0 0 14px; background:#2a0f14; border:1px solid var(--red);
+    color:#ffb3b3; border-radius:10px; padding:12px; font-size:.88rem;}
+  #lightbox{display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:50;
+    flex-direction:column; align-items:center; justify-content:center; padding:20px;}
+  #lightbox img{max-width:100%; max-height:78vh; border-radius:8px;}
+  #lightbox .lb-bar{margin-top:14px; display:flex; gap:10px;}
+  #lightbox .lb-bar a, #lightbox .lb-bar button{
+    padding:12px 20px; border-radius:10px; font-weight:700; font-size:.95rem; text-decoration:none;}
+  #lightbox .dl{background:linear-gradient(180deg,var(--gold-soft),var(--gold)); color:#1a1206;}
+  #lightbox .close{background:none; border:1px solid var(--line); color:var(--text); cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="logo.jpg" alt="PCFC logo">
+    <h1>Photo Admin</h1>
+    <p class="sub">Pinellas County Fire Conference &mdash; uploaded photos</p>
+  </header>
+
+  <div class="card" id="loginCard">
+    <h2>🔒 Admin sign-in</h2>
+    <p>Sign in with your admin account to view uploaded photos.</p>
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" autocomplete="username" placeholder="you@example.com">
+    </div>
+    <div class="field">
+      <label for="pw">Password</label>
+      <input type="password" id="pw" autocomplete="current-password" placeholder="••••••••">
+    </div>
+    <button id="signin">Sign in</button>
+    <div id="err"></div>
+  </div>
+
+  <div id="gallery">
+    <div class="toolbar">
+      <div class="count" id="count"></div>
+      <div class="actions">
+        <button class="ghost" id="refresh">↻ Refresh</button>
+        <button class="ghost" id="signout">Sign out</button>
+      </div>
+    </div>
+    <div id="gerr"></div>
+    <div id="grid"></div>
+    <div id="empty">No photos uploaded yet. Check back after the conference kicks off! 🔥</div>
+  </div>
+</div>
+
+<div id="lightbox">
+  <img id="lbImg" src="" alt="Uploaded photo">
+  <div class="lb-bar">
+    <a class="dl" id="lbDl" href="#" target="_blank" rel="noopener">⬇ Download</a>
+    <button class="close" id="lbClose">Close</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script>
+/* ── Firebase config — same values as index.html ── */
+const firebaseConfig = {
+  apiKey: "PASTE_YOUR_API_KEY",
+  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
+  projectId: "PASTE_YOUR_PROJECT_ID",
+  storageBucket: "PASTE_YOUR_PROJECT.appspot.com",
+  messagingSenderId: "PASTE_SENDER_ID",
+  appId: "PASTE_APP_ID"
+};
+const READY = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY";
+if (READY) { firebase.initializeApp(firebaseConfig); }
+
+const loginCard = document.getElementById('loginCard');
+const gallery = document.getElementById('gallery');
+const grid = document.getElementById('grid');
+const errBox = document.getElementById('err');
+const countEl = document.getElementById('count');
+const emptyEl = document.getElementById('empty');
+
+function showErr(msg){ errBox.textContent = msg; errBox.style.display = 'block'; }
+
+document.getElementById('signin').addEventListener('click', async () => {
+  if (!READY) { showErr('Admin access is not configured yet — please check back soon.'); return; }
+  errBox.style.display = 'none';
+  const email = document.getElementById('email').value.trim();
+  const pw = document.getElementById('pw').value;
+  if (!email || !pw) { showErr('Enter your email and password.'); return; }
+  try {
+    await firebase.auth().signInWithEmailAndPassword(email, pw);
+  } catch (e) {
+    showErr('Sign-in failed. Check your email and password and try again.');
+  }
+});
+
+document.getElementById('signout').addEventListener('click', () => firebase.auth().signOut());
+document.getElementById('refresh').addEventListener('click', loadPhotos);
+
+if (READY) {
+  firebase.auth().onAuthStateChanged(user => {
+    loginCard.style.display = user ? 'none' : 'block';
+    gallery.style.display = user ? 'block' : 'none';
+    if (user) loadPhotos();
+  });
+}
+
+async function loadPhotos(){
+  grid.innerHTML = ''; emptyEl.style.display = 'none';
+  document.getElementById('gerr').style.display = 'none';
+  countEl.textContent = 'Loading…';
+  try {
+    const res = await firebase.storage().ref('pcfc-2026/').listAll();
+    const items = res.items.sort((a, b) => b.name.localeCompare(a.name));
+    countEl.textContent = items.length + (items.length === 1 ? ' photo' : ' photos');
+    if (!items.length) { emptyEl.style.display = 'block'; return; }
+    for (const item of items) {
+      const url = await item.getDownloadURL();
+      const a = document.createElement('a');
+      a.innerHTML = `<img loading="lazy" src="${url}" alt="">`;
+      a.addEventListener('click', e => { e.preventDefault(); openLightbox(url); });
+      grid.appendChild(a);
+    }
+  } catch (e) {
+    countEl.textContent = '';
+    const gerr = document.getElementById('gerr');
+    gerr.textContent = 'Could not load photos. Check your connection and try again.';
+    gerr.style.display = 'block';
+  }
+}
+
+const lightbox = document.getElementById('lightbox');
+function openLightbox(url){
+  document.getElementById('lbImg').src = url;
+  document.getElementById('lbDl').href = url;
+  lightbox.style.display = 'flex';
+}
+document.getElementById('lbClose').addEventListener('click', () => {
+  lightbox.style.display = 'none'; document.getElementById('lbImg').src = '';
+});
+lightbox.addEventListener('click', e => { if (e.target === lightbox) document.getElementById('lbClose').click(); });
+</script>
+</body>
+</html>
