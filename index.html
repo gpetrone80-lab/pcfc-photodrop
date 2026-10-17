@@ -197,8 +197,8 @@ btn.addEventListener('click', async () => {
     try {
       const stamp = new Date().toISOString().replace(/[:.]/g, '-');
       const safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const ref = storage.ref(`pcfc-2026/${stamp}_${safe}`);
-      const task = ref.put(f, { customMetadata: { owner: anonUser.uid } });
+      const ref = storage.ref(`pcfc-2026/${anonUser.uid}/${stamp}_${safe}`);
+      const task = ref.put(f);
       await new Promise((res, rej) => {
         task.on('state_changed',
           s => { const p = Math.round(s.bytesTransferred / s.totalBytes * 100);

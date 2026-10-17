@@ -235,8 +235,15 @@ async function loadPhotos(){
   countEl.textContent = 'Loading…';
   photoItems = []; selected.clear(); renderGrid();
   try {
-    const res = await firebase.storage().ref('pcfc-2026/').listAll();
-    const items = res.items.sort((a, b) => b.name.localeCompare(a.name));
+    const storage = firebase.storage();
+    const root = await storage.ref('pcfc-2026/').listAll();
+    // Photos now live in per-uploader subfolders: pcfc-2026/{uid}/{file}
+    let items = [...root.items]; // any legacy files directly under pcfc-2026/
+    for (const prefix of root.prefixes) {
+      const sub = await storage.ref(prefix.fullPath).listAll();
+      items.push(...sub.items);
+    }
+    items = items.sort((a, b) => b.name.localeCompare(a.name));
     for (const item of items) {
       const url = await item.getDownloadURL();
       photoItems.push({item, url, name: item.name});
