@@ -49,9 +49,17 @@
   .toolbar .count{color:var(--muted); font-size:.9rem;}
   .toolbar .actions{display:flex; gap:8px;}
   #grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px;}
-  #grid a{display:block; border-radius:10px; overflow:hidden; border:1px solid var(--line);
+  .thumb{position:relative; border-radius:10px; overflow:hidden; border:1px solid var(--line);
     background:#0e0e13; aspect-ratio:1; cursor:pointer;}
-  #grid img{width:100%; height:100%; object-fit:cover; display:block;}
+  .thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+  .thumb input{position:absolute; top:8px; left:8px; width:22px; height:22px; margin:0;
+    accent-color:var(--gold); cursor:pointer; z-index:2;}
+  .thumb.sel{outline:3px solid var(--gold); outline-offset:-3px;}
+  .toolbar{flex-wrap:wrap; row-gap:10px;}
+  .toolbar .actions{flex-wrap:wrap;}
+  button.ghost.danger{border-color:var(--red); color:#ff8a8a;}
+  button.ghost:disabled{opacity:.4; cursor:default;}
+  #selInfo{color:var(--gold-soft); font-size:.9rem; margin:0 0 10px; display:none;}
   #empty{display:none; text-align:center; color:var(--muted); padding:40px 0;}
   #gerr{display:none; margin:0 0 14px; background:#2a0f14; border:1px solid var(--red);
     color:#ffb3b3; border-radius:10px; padding:12px; font-size:.88rem;}
@@ -92,10 +100,14 @@
     <div class="toolbar">
       <div class="count" id="count"></div>
       <div class="actions">
+        <button class="ghost" id="selAll">Select all</button>
+        <button class="ghost" id="dlSel" disabled>⬇ ZIP</button>
+        <button class="ghost danger" id="delSel" disabled>🗑 Delete</button>
         <button class="ghost" id="refresh">↻ Refresh</button>
         <button class="ghost" id="signout">Sign out</button>
       </div>
     </div>
+    <div id="selInfo"></div>
     <div id="gerr"></div>
     <div id="grid"></div>
     <div id="empty">No photos uploaded yet. Check back after the conference kicks off! 🔥</div>
@@ -110,6 +122,7 @@
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
@@ -159,22 +172,22 @@ if (READY) {
   });
 }
 
+let photoItems = [];   // {item, url, name}
+let selected = new Set();
+
 async function loadPhotos(){
   grid.innerHTML = ''; emptyEl.style.display = 'none';
   document.getElementById('gerr').style.display = 'none';
   countEl.textContent = 'Loading…';
+  photoItems = []; selected.clear(); renderGrid();
   try {
     const res = await firebase.storage().ref('pcfc-2026/').listAll();
     const items = res.items.sort((a, b) => b.name.localeCompare(a.name));
-    countEl.textContent = items.length + (items.length === 1 ? ' photo' : ' photos');
-    if (!items.length) { emptyEl.style.display = 'block'; return; }
     for (const item of items) {
       const url = await item.getDownloadURL();
-      const a = document.createElement('a');
-      a.innerHTML = `<img loading="lazy" src="${url}" alt="">`;
-      a.addEventListener('click', e => { e.preventDefault(); openLightbox(url); });
-      grid.appendChild(a);
+      photoItems.push({item, url, name: item.name});
     }
+    renderGrid();
   } catch (e) {
     countEl.textContent = '';
     const gerr = document.getElementById('gerr');
@@ -182,6 +195,94 @@ async function loadPhotos(){
     gerr.style.display = 'block';
   }
 }
+
+function renderGrid(){
+  grid.innerHTML = '';
+  countEl.textContent = photoItems.length + (photoItems.length === 1 ? ' photo' : ' photos');
+  emptyEl.style.display = photoItems.length ? 'none' : 'block';
+  photoItems.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'thumb' + (selected.has(i) ? ' sel' : '');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = selected.has(i); cb.setAttribute('aria-label', 'Select photo');
+    cb.addEventListener('click', e => { e.stopPropagation(); toggleSelect(i); });
+    const img = document.createElement('img');
+    img.loading = 'lazy'; img.src = p.url; img.alt = '';
+    img.addEventListener('click', () => openLightbox(p.url));
+    d.appendChild(cb); d.appendChild(img);
+    grid.appendChild(d);
+  });
+  updateToolbar();
+}
+
+function toggleSelect(i){
+  selected.has(i) ? selected.delete(i) : selected.add(i);
+  renderGrid();
+}
+
+function updateToolbar(){
+  const n = selected.size;
+  document.getElementById('dlSel').disabled = !n;
+  document.getElementById('delSel').disabled = !n;
+  const info = document.getElementById('selInfo');
+  info.style.display = n ? 'block' : 'none';
+  info.textContent = n + ' selected';
+  document.getElementById('selAll').textContent =
+    (photoItems.length && n === photoItems.length) ? 'Clear' : 'Select all';
+}
+
+document.getElementById('selAll').addEventListener('click', () => {
+  if (selected.size === photoItems.length) selected.clear();
+  else photoItems.forEach((_, i) => selected.add(i));
+  renderGrid();
+});
+
+document.getElementById('delSel').addEventListener('click', async () => {
+  const idx = [...selected];
+  if (!idx.length) return;
+  if (!confirm(`Delete ${idx.length} photo${idx.length > 1 ? 's' : ''}? This cannot be undone.`)) return;
+  const delBtn = document.getElementById('delSel');
+  delBtn.disabled = true; delBtn.textContent = 'Deleting…';
+  let ok = 0, fail = 0;
+  for (const i of idx) {
+    try { await photoItems[i].item.delete(); ok++; }
+    catch(e) { fail++; }
+  }
+  await loadPhotos();
+  delBtn.textContent = '🗑 Delete';
+  if (fail) alert(`Deleted ${ok}, ${fail} failed.`);
+});
+
+document.getElementById('dlSel').addEventListener('click', async () => {
+  const idx = [...selected];
+  if (!idx.length || typeof JSZip === 'undefined') return;
+  const dlBtn = document.getElementById('dlSel');
+  dlBtn.disabled = true; dlBtn.textContent = 'Zipping…';
+  try {
+    const zip = new JSZip();
+    let ok = 0, fail = 0;
+    for (const i of idx) {
+      const p = photoItems[i];
+      try {
+        const r = await fetch(p.url);
+        if (!r.ok) throw new Error('fetch failed');
+        zip.file(p.name, await r.blob());
+        ok++;
+      } catch(e) { fail++; }
+    }
+    if (!ok) { alert('Could not download the selected photos.'); return; }
+    const blob = await zip.generateAsync({type: 'blob'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'pcfc-photos.zip';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    if (fail) alert(`Zipped ${ok} of ${idx.length} photos (${fail} failed).`);
+  } finally {
+    dlBtn.textContent = '⬇ ZIP';
+    updateToolbar();
+  }
+});
 
 const lightbox = document.getElementById('lightbox');
 function openLightbox(url){
