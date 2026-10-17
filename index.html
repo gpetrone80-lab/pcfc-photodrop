@@ -178,7 +178,21 @@ input.addEventListener('change', () => {
   queue.forEach(f => {
     const d = document.createElement('div');
     d.className = 'file';
-    d.innerHTML = `<div class="row"><span class="name">${f.name}</span><span class="pct">waiting</span></div><div class="bar"><i></i></div>`;
+    const row = document.createElement('div');
+    row.className = 'row';
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'name';
+    nameSpan.textContent = f.name;
+    const pct = document.createElement('span');
+    pct.className = 'pct';
+    pct.textContent = 'waiting';
+    row.appendChild(nameSpan);
+    row.appendChild(pct);
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.appendChild(document.createElement('i'));
+    d.appendChild(row);
+    d.appendChild(bar);
     list.appendChild(d);
   });
   applyKillSwitch();
