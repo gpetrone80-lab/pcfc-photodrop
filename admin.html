@@ -60,6 +60,18 @@
   button.ghost.danger{border-color:var(--red); color:#ff8a8a;}
   button.ghost:disabled{opacity:.4; cursor:default;}
   #selInfo{color:var(--gold-soft); font-size:.9rem; margin:0 0 10px; display:none;}
+  .toggle-row{display:flex; align-items:center; justify-content:space-between; gap:12px;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:14px 16px; margin-top:18px;}
+  .toggle-title{font-weight:700;}
+  .toggle-sub{color:var(--muted); font-size:.82rem; margin-top:2px;}
+  .switch{position:relative; width:52px; height:30px; flex-shrink:0;}
+  .switch input{opacity:0; width:0; height:0;}
+  .slider{position:absolute; inset:0; background:#3a3a44; border-radius:30px; transition:.2s; cursor:pointer;}
+  .slider:before{position:absolute; content:""; height:22px; width:22px; left:4px; top:4px;
+    background:#fff; border-radius:50%; transition:.2s;}
+  .switch input:checked + .slider{background:var(--gold);}
+  .switch input:checked + .slider:before{transform:translateX(22px);}
   #empty{display:none; text-align:center; color:var(--muted); padding:40px 0;}
   #gerr{display:none; margin:0 0 14px; background:#2a0f14; border:1px solid var(--red);
     color:#ffb3b3; border-radius:10px; padding:12px; font-size:.88rem;}
@@ -97,6 +109,16 @@
   </div>
 
   <div id="gallery">
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-title">Photo uploads</div>
+        <div class="toggle-sub" id="toggleState">Checking…</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="uploadToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
     <div class="toolbar">
       <div class="count" id="count"></div>
       <div class="actions">
@@ -125,6 +147,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script>
 /* ── Firebase config — same values as index.html ── */
@@ -168,9 +191,40 @@ if (READY) {
   firebase.auth().onAuthStateChanged(user => {
     loginCard.style.display = user ? 'none' : 'block';
     gallery.style.display = user ? 'block' : 'none';
-    if (user) loadPhotos();
+    if (user) { loadPhotos(); watchKillSwitch(); }
+    else if (killUnsub) { killUnsub(); killUnsub = null; }
   });
 }
+
+/* Upload kill switch toggle */
+const toggleInput = document.getElementById('uploadToggle');
+const toggleState = document.getElementById('toggleState');
+let killUnsub = null;
+function watchKillSwitch(){
+  if (killUnsub) killUnsub();
+  try {
+    killUnsub = firebase.firestore().collection('config').doc('site').onSnapshot(doc => {
+      const on = !doc.exists || doc.data().uploadsEnabled !== false;
+      toggleInput.checked = on;
+      toggleState.textContent = on ? 'On — attendees can upload' : 'Off — uploads are closed';
+    }, () => {
+      toggleState.textContent = 'Status unavailable — uploads stay open';
+    });
+  } catch(e) {
+    toggleState.textContent = 'Status unavailable — uploads stay open';
+  }
+}
+toggleInput.addEventListener('change', async () => {
+  const on = toggleInput.checked;
+  toggleInput.disabled = true;
+  try {
+    await firebase.firestore().collection('config').doc('site').set({uploadsEnabled: on}, {merge: true});
+  } catch(e) {
+    alert('Could not save — check your connection.');
+    toggleInput.checked = !on;
+  }
+  toggleInput.disabled = false;
+});
 
 let photoItems = [];   // {item, url, name}
 let selected = new Set();

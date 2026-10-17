@@ -66,6 +66,8 @@
   .file.err .pct{color:#ff8a8a;}
   #done{display:none; margin-top:16px; background:#0f2a1a; border:1px solid #2f7d4f; color:#bdf0cd;
     border-radius:12px; padding:14px; text-align:center; font-weight:600;}
+  #closedMsg{display:none; margin-top:16px; background:#2a0f14; border:1px solid var(--red);
+    color:#ffb3b3; border-radius:12px; padding:14px; text-align:center; font-weight:600;}
   #mine{margin-top:18px;}
   #mine h3{margin:0 0 4px; font-size:1rem;}
   .mine-hint{color:var(--muted); font-size:.82rem; margin:0 0 10px;}
@@ -100,6 +102,7 @@
     <button id="upload" disabled>Select photos to begin</button>
     <div id="list"></div>
     <div id="done">✅ All photos uploaded &mdash; thank you for sharing the fire! 🔥</div>
+    <div id="closedMsg">📵 Photo uploads are currently closed — please check back later!</div>
     <div id="mine" style="display:none;">
       <h3>Your uploads</h3>
       <p class="mine-hint">Only you can delete these — nobody else can touch them.</p>
@@ -117,6 +120,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
 /* ── Firebase config — paste your project's web config below ── */
 const firebaseConfig = {
@@ -138,6 +142,27 @@ if (READY) {
   firebase.auth().signInAnonymously().catch(() => {});
 }
 
+/* Upload kill switch — admin flips it from the admin page, this page obeys live */
+let uploadsEnabled = true;
+const closedMsg = document.getElementById('closedMsg');
+function applyKillSwitch(){
+  if (!uploadsEnabled) {
+    btn.disabled = true;
+    btn.textContent = 'Uploads closed';
+    closedMsg.style.display = 'block';
+  } else {
+    closedMsg.style.display = 'none';
+  }
+}
+if (READY) {
+  try {
+    firebase.firestore().collection('config').doc('site').onSnapshot(doc => {
+      uploadsEnabled = !doc.exists || doc.data().uploadsEnabled !== false;
+      applyKillSwitch();
+    }, () => { uploadsEnabled = true; applyKillSwitch(); });
+  } catch(e) { /* stay open */ }
+}
+
 const input = document.getElementById('files');
 const btn = document.getElementById('upload');
 const list = document.getElementById('list');
@@ -156,11 +181,13 @@ input.addEventListener('change', () => {
     d.innerHTML = `<div class="row"><span class="name">${f.name}</span><span class="pct">waiting</span></div><div class="bar"><i></i></div>`;
     list.appendChild(d);
   });
+  applyKillSwitch();
 });
 
 btn.addEventListener('click', async () => {
   if (!READY) { alert('Uploads are not configured yet — please check back soon!'); return; }
   if (!anonUser) { alert('Still connecting — please try again in a moment.'); return; }
+  if (!uploadsEnabled) { alert('Uploads are currently closed.'); return; }
   btn.disabled = true; btn.textContent = 'Uploading…';
   const rows = [...list.children];
   let ok = 0;
