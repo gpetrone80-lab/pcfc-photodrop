@@ -66,6 +66,15 @@
   .file.err .pct{color:#ff8a8a;}
   #done{display:none; margin-top:16px; background:#0f2a1a; border:1px solid #2f7d4f; color:#bdf0cd;
     border-radius:12px; padding:14px; text-align:center; font-weight:600;}
+  #mine{margin-top:18px;}
+  #mine h3{margin:0 0 4px; font-size:1rem;}
+  .mine-hint{color:var(--muted); font-size:.82rem; margin:0 0 10px;}
+  .mine-item{display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:#0e0e13; border:1px solid var(--line); border-radius:10px;
+    padding:10px 12px; font-size:.85rem; margin-bottom:8px;}
+  .mine-item .name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .mine-item button{width:auto; margin:0; padding:8px 14px; font-size:.82rem; font-weight:700;
+    background:none; border:1px solid var(--red); color:#ff8a8a; border-radius:8px; cursor:pointer;}
   footer{margin-top:30px; text-align:center; color:var(--muted); font-size:.78rem; line-height:1.6;}
   footer a{color:var(--gold-soft);}
 </style>
@@ -91,6 +100,11 @@
     <button id="upload" disabled>Select photos to begin</button>
     <div id="list"></div>
     <div id="done">✅ All photos uploaded &mdash; thank you for sharing the fire! 🔥</div>
+    <div id="mine" style="display:none;">
+      <h3>Your uploads</h3>
+      <p class="mine-hint">Only you can delete these — nobody else can touch them.</p>
+      <div id="mineList"></div>
+    </div>
   </div>
 
   <footer>
@@ -101,6 +115,7 @@
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script>
 /* ── Firebase config — paste your project's web config below ── */
@@ -115,6 +130,13 @@ const firebaseConfig = {
 const READY = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY";
 if (READY) { firebase.initializeApp(firebaseConfig); }
 const storage = READY ? firebase.storage() : null;
+
+/* Invisible per-visitor identity so each person can delete only their own uploads */
+let anonUser = null;
+if (READY) {
+  firebase.auth().onAuthStateChanged(u => { anonUser = u; renderMine(); });
+  firebase.auth().signInAnonymously().catch(() => {});
+}
 
 const input = document.getElementById('files');
 const btn = document.getElementById('upload');
@@ -138,6 +160,7 @@ input.addEventListener('change', () => {
 
 btn.addEventListener('click', async () => {
   if (!READY) { alert('Uploads are not configured yet — please check back soon!'); return; }
+  if (!anonUser) { alert('Still connecting — please try again in a moment.'); return; }
   btn.disabled = true; btn.textContent = 'Uploading…';
   const rows = [...list.children];
   let ok = 0;
@@ -148,7 +171,7 @@ btn.addEventListener('click', async () => {
       const stamp = new Date().toISOString().replace(/[:.]/g, '-');
       const safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const ref = storage.ref(`pcfc-2026/${stamp}_${safe}`);
-      const task = ref.put(f);
+      const task = ref.put(f, { customMetadata: { owner: anonUser.uid } });
       await new Promise((res, rej) => {
         task.on('state_changed',
           s => { const p = Math.round(s.bytesTransferred / s.totalBytes * 100);
@@ -156,7 +179,7 @@ btn.addEventListener('click', async () => {
           rej, res);
       });
       row.classList.add('done'); pct.textContent = 'uploaded ✓'; ok++;
-    } catch (e) {
+      saveMine(ref.fullPath, f.name);    } catch (e) {
       row.classList.add('err'); pct.textContent = 'failed — try again';
     }
   }
@@ -164,6 +187,43 @@ btn.addEventListener('click', async () => {
   btn.disabled = false; input.value = ''; queue = [];
   if (ok === rows.length && ok > 0) doneBox.style.display = 'block';
 });
+
+/* ── Your uploads: delete only your own ── */
+const mineBox = document.getElementById('mine');
+const mineList = document.getElementById('mineList');
+const MINE_KEY = 'pcfc_my_uploads';
+const getMine = () => { try { return JSON.parse(localStorage.getItem(MINE_KEY)) || []; } catch(e){ return []; } };
+const setMine = a => localStorage.setItem(MINE_KEY, JSON.stringify(a));
+function saveMine(path, name){
+  const a = getMine();
+  if (!a.some(x => x.path === path)) { a.unshift({path, name}); setMine(a); }
+  renderMine();
+}
+function renderMine(){
+  const a = getMine();
+  mineBox.style.display = a.length ? 'block' : 'none';
+  mineList.innerHTML = '';
+  a.forEach(item => {
+    const d = document.createElement('div');
+    d.className = 'mine-item';
+    const s = document.createElement('span'); s.className = 'name'; s.textContent = item.name;
+    const b = document.createElement('button'); b.textContent = 'Delete';
+    b.addEventListener('click', async () => {
+      if (!confirm('Delete "' + item.name + '"?')) return;
+      b.disabled = true; b.textContent = '…';
+      try {
+        await storage.ref(item.path).delete();
+        setMine(getMine().filter(x => x.path !== item.path));
+        renderMine();
+      } catch(e) {
+        b.disabled = false; b.textContent = 'Delete';
+        alert('Could not delete — it may have been uploaded from a different browser.');
+      }
+    });
+    d.appendChild(s); d.appendChild(b); mineList.appendChild(d);
+  });
+}
+renderMine();
 </script>
 </body>
 </html>
