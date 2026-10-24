@@ -77,6 +77,15 @@
   .mine-item .name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .mine-item button{width:auto; margin:0; padding:8px 14px; font-size:.82rem; font-weight:700;
     background:none; border:1px solid var(--red); color:#ff8a8a; border-radius:8px; cursor:pointer;}
+  .release-check{display:flex; gap:12px; align-items:flex-start; margin-top:16px; cursor:pointer;
+    background:#0e0e13; border:1px solid var(--line); border-radius:12px; padding:14px;}
+  .release-check input{width:24px; height:24px; flex:none; margin:2px 0 0; accent-color:var(--gold); cursor:pointer;}
+  .release-check span{font-size:.95rem; font-weight:600; line-height:1.45;}
+  .release-text{margin-top:10px; background:#0e0e13; border:1px solid var(--line); border-radius:12px;
+    padding:12px 14px; max-height:170px; overflow-y:auto; color:var(--muted);
+    font-size:.78rem; line-height:1.55;}
+  .release-text strong{color:var(--text); letter-spacing:.04em;}
+  .release-text p{margin:0 0 8px; color:var(--muted); font-size:.78rem;}
   footer{margin-top:30px; text-align:center; color:var(--muted); font-size:.78rem; line-height:1.6;}
   footer a{color:var(--gold-soft);}
 </style>
@@ -99,6 +108,15 @@
       <small>JPG / PNG / HEIC &bull; up to 15&nbsp;MB each</small>
     </label>
     <input type="file" id="files" accept="image/*" multiple>
+    <label class="release-check" for="consent">
+      <input type="checkbox" id="consent">
+      <span>✅ I agree to the Photo Release below and confirm I have the right to share these photos.</span>
+    </label>
+    <div class="release-text">
+      <p><strong>PHOTO RELEASE</strong> — By checking the box and uploading, I grant the Pinellas County Fire Conference, its organizers, and Gianluca Petrone permission to use, copy, edit, crop, publish, and share the photo(s) I upload — on Facebook, Instagram, the conference website, and other promotional materials — without payment, royalties, or any further approval from me.</p>
+      <p>I confirm the photos are mine to share, and that I have permission from the people pictured where it is needed. I understand the photos may show my own image and likeness, and I release the Pinellas County Fire Conference and its organizers from any claims or liability connected with this use.</p>
+      <p>I am 18 years or older, or I am the parent/legal guardian of the minor pictured. If I later want a photo taken down, I can contact the conference and it will be removed from future use.</p>
+    </div>
     <button id="upload" disabled>Select photos to begin</button>
     <div id="list"></div>
     <div id="done">✅ All photos uploaded &mdash; thank you for sharing the fire! 🔥</div>
@@ -152,6 +170,7 @@ function applyKillSwitch(){
     closedMsg.style.display = 'block';
   } else {
     closedMsg.style.display = 'none';
+    refreshBtn();
   }
 }
 if (READY) {
@@ -165,16 +184,26 @@ if (READY) {
 
 const input = document.getElementById('files');
 const btn = document.getElementById('upload');
+const consent = document.getElementById('consent');
 const list = document.getElementById('list');
 const doneBox = document.getElementById('done');
 let queue = [];
 
+/* Upload stays locked until: uploads open + photos picked + release agreed */
+function refreshBtn(){
+  if (!uploadsEnabled) { btn.disabled = true; btn.textContent = 'Uploads closed'; return; }
+  if (!queue.length) { btn.disabled = true; btn.textContent = 'Select photos to begin'; return; }
+  if (!consent.checked) { btn.disabled = true; btn.textContent = '☝️ Check the release box to upload'; return; }
+  btn.disabled = false;
+  btn.textContent = `Upload ${queue.length} photo${queue.length > 1 ? 's' : ''} 🔥`;
+}
+consent.addEventListener('change', refreshBtn);
+
 input.addEventListener('change', () => {
   queue = [...input.files].filter(f => f.type.startsWith('image/'));
   list.innerHTML = ''; doneBox.style.display = 'none';
-  if (!queue.length) { btn.disabled = true; btn.textContent = 'Select photos to begin'; return; }
-  btn.disabled = false;
-  btn.textContent = `Upload ${queue.length} photo${queue.length > 1 ? 's' : ''} 🔥`;
+  if (!queue.length) { refreshBtn(); return; }
+  refreshBtn();
   queue.forEach(f => {
     const d = document.createElement('div');
     d.className = 'file';
@@ -202,6 +231,7 @@ btn.addEventListener('click', async () => {
   if (!READY) { alert('Uploads are not configured yet — please check back soon!'); return; }
   if (!anonUser) { alert('Still connecting — please try again in a moment.'); return; }
   if (!uploadsEnabled) { alert('Uploads are currently closed.'); return; }
+  if (!consent.checked) { alert('Please check the Photo Release box to upload.'); return; }
   btn.disabled = true; btn.textContent = 'Uploading…';
   const rows = [...list.children];
   let ok = 0;
@@ -212,7 +242,11 @@ btn.addEventListener('click', async () => {
       const stamp = new Date().toISOString().replace(/[:.]/g, '-');
       const safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const ref = storage.ref(`pcfc-2026/${anonUser.uid}/${stamp}_${safe}`);
-      const task = ref.put(f);
+      const task = ref.put(f, { customMetadata: {
+        photoRelease: 'agreed',
+        releaseVersion: '2026-10-23',
+        consentAt: new Date().toISOString()
+      }});
       await new Promise((res, rej) => {
         task.on('state_changed',
           s => { const p = Math.round(s.bytesTransferred / s.totalBytes * 100);
@@ -224,8 +258,8 @@ btn.addEventListener('click', async () => {
       row.classList.add('err'); pct.textContent = 'failed — try again';
     }
   }
-  btn.textContent = 'Select more photos';
-  btn.disabled = false; input.value = ''; queue = [];
+  input.value = ''; queue = [];
+  refreshBtn();
   if (ok === rows.length && ok > 0) doneBox.style.display = 'block';
 });
 
