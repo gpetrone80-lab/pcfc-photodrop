@@ -1,0 +1,39 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'password';
+    }
+    function validUpload() {
+      return request.resource.size < 15 * 1024 * 1024
+          && request.resource.contentType.matches('image/.*');
+    }
+
+    // Admin can list the uploader folders at the top level
+    match /pcfc-2026 {
+      allow list: if isAdmin();
+    }
+
+    // Per-uploader folders: pcfc-2026/{uid}/{file}
+    match /pcfc-2026/{uid} {
+      allow list: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+      match /{file} {
+        allow create: if isAdmin()
+          || (request.auth != null && request.auth.uid == uid && validUpload());
+        allow read: if isAdmin();
+        allow delete: if isAdmin()
+          || (request.auth != null && request.auth.uid == uid);
+      }
+    }
+
+    // Legacy files stored directly under pcfc-2026/
+    match /pcfc-2026/{file} {
+      allow read, list, delete: if isAdmin();
+      allow create: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write, list: if false;
+    }
+  }
+}

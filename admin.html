@@ -123,12 +123,14 @@
       <div class="count" id="count"></div>
       <div class="actions">
         <button class="ghost" id="selAll">Select all</button>
-        <button class="ghost" id="dlSel" disabled>⬇ ZIP</button>
+        <button class="ghost" id="dlAll">⬇ Download All (ZIP)</button>
+        <button class="ghost" id="dlSel" disabled>⬇ ZIP selected</button>
         <button class="ghost danger" id="delSel" disabled>🗑 Delete</button>
         <button class="ghost" id="refresh">↻ Refresh</button>
         <button class="ghost" id="signout">Sign out</button>
       </div>
     </div>
+    <div style="color:#a9a49a;font-size:.82rem;margin:2px 0 8px;">Downloading only <strong>copies</strong> photos to your computer — the originals stay on this site. Only the red Delete button removes photos.</div>
     <div id="selInfo"></div>
     <div id="gerr"></div>
     <div id="grid"></div>
@@ -229,7 +231,10 @@ toggleInput.addEventListener('change', async () => {
 let photoItems = [];   // {item, url, name}
 let selected = new Set();
 
+let loadingPhotos = false;
 async function loadPhotos(){
+  if (loadingPhotos) return;   // never stack two loads — overlapping loads double-count photos
+  loadingPhotos = true;
   grid.innerHTML = ''; emptyEl.style.display = 'none';
   document.getElementById('gerr').style.display = 'none';
   countEl.textContent = 'Loading…';
@@ -243,6 +248,8 @@ async function loadPhotos(){
       const sub = await storage.ref(prefix.fullPath).listAll();
       items.push(...sub.items);
     }
+    const seenPaths = new Set();
+    items = items.filter(it => { const k = it.fullPath; if (seenPaths.has(k)) return false; seenPaths.add(k); return true; });
     items = items.sort((a, b) => b.name.localeCompare(a.name));
     for (const item of items) {
       const url = await item.getDownloadURL();
@@ -254,6 +261,8 @@ async function loadPhotos(){
     const gerr = document.getElementById('gerr');
     gerr.textContent = 'Could not load photos. Check your connection and try again.';
     gerr.style.display = 'block';
+  } finally {
+    loadingPhotos = false;
   }
 }
 
@@ -284,6 +293,7 @@ function toggleSelect(i){
 function updateToolbar(){
   const n = selected.size;
   document.getElementById('dlSel').disabled = !n;
+  document.getElementById('dlAll').disabled = !photoItems.length;
   document.getElementById('delSel').disabled = !n;
   const info = document.getElementById('selInfo');
   info.style.display = n ? 'block' : 'none';
@@ -314,16 +324,17 @@ document.getElementById('delSel').addEventListener('click', async () => {
   if (fail) alert(`Deleted ${ok}, ${fail} failed.`);
 });
 
-document.getElementById('dlSel').addEventListener('click', async () => {
-  const idx = [...selected];
+async function downloadZip(idx, btn){
   if (!idx.length || typeof JSZip === 'undefined') return;
-  const dlBtn = document.getElementById('dlSel');
-  dlBtn.disabled = true; dlBtn.textContent = 'Zipping…';
+  const orig = btn.textContent;
+  btn.disabled = true;
   try {
     const zip = new JSZip();
-    let ok = 0, fail = 0;
+    let ok = 0, fail = 0, done = 0;
     for (const i of idx) {
       const p = photoItems[i];
+      done++;
+      btn.textContent = `Zipping ${done} / ${idx.length}…`;
       try {
         const r = await fetch(p.url);
         if (!r.ok) throw new Error('fetch failed');
@@ -332,6 +343,7 @@ document.getElementById('dlSel').addEventListener('click', async () => {
       } catch(e) { fail++; }
     }
     if (!ok) { alert('Could not download the selected photos.'); return; }
+    btn.textContent = 'Building ZIP…';
     const blob = await zip.generateAsync({type: 'blob'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -340,9 +352,17 @@ document.getElementById('dlSel').addEventListener('click', async () => {
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     if (fail) alert(`Zipped ${ok} of ${idx.length} photos (${fail} failed).`);
   } finally {
-    dlBtn.textContent = '⬇ ZIP';
+    btn.textContent = orig;
     updateToolbar();
   }
+}
+
+document.getElementById('dlSel').addEventListener('click', () => {
+  downloadZip([...selected], document.getElementById('dlSel'));
+});
+
+document.getElementById('dlAll').addEventListener('click', () => {
+  downloadZip(photoItems.map((_, i) => i), document.getElementById('dlAll'));
 });
 
 const lightbox = document.getElementById('lightbox');
