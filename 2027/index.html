@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pinellas County Fire Conference 2027</title>
+<meta name="description" content="The Pinellas County Fire Conference returns in 2027. Leave your email to be notified about dates, host, classes and speakers.">
+<style>
+  :root{
+    --gold:#f2b234; --gold-soft:#ffd166; --red:#d7263d;
+    --bg:#0b0b0e; --panel:#15151b; --line:#2a2a33; --text:#f4f1ea; --muted:#a9a49a;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%, #2a1408 0%, var(--bg) 55%) fixed, var(--bg);
+    color:var(--text); min-height:100vh; padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+  }
+  .wrap{width:100%; max-width:900px; margin:0 auto; padding:28px 0 48px;}
+  header{text-align:center; margin-bottom:8px;}
+  header img{width:230px; height:auto; filter:drop-shadow(0 0 26px rgba(242,178,52,.35));}
+  h1{font-size:1.15rem; letter-spacing:.18em; margin:10px 0 0; text-transform:uppercase; line-height:1.25; font-weight:600; color:var(--muted);}
+  .year{font-size:3.4rem; font-weight:900; letter-spacing:.1em; margin:2px 0 0; line-height:1.1;
+    background:linear-gradient(180deg,var(--gold-soft),var(--gold) 60%,#b97a12);
+    -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .sub{color:var(--muted); font-size:.95rem; margin:10px 0 0;}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:14px; margin:26px auto 0; max-width:760px; box-shadow:0 8px 30px rgba(0,0,0,.45);}
+  .show{position:relative; border-radius:12px; overflow:hidden; aspect-ratio:16/10; background:#000;}
+  .show img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 1.1s;}
+  .show img.on{opacity:1;}
+  .show .cap{position:absolute; left:0; right:0; bottom:0; padding:26px 14px 12px; font-size:.85rem; color:#eee;
+    background:linear-gradient(0deg, rgba(0,0,0,.72), transparent);}
+  .dots{position:absolute; right:12px; bottom:14px; display:flex; gap:6px;}
+  .dots i{width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.4);}
+  .dots i.on{background:var(--gold);}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:22px 18px; margin:22px auto 0; max-width:420px; box-shadow:0 8px 30px rgba(0,0,0,.45);}
+  .card h2{margin:0 0 12px; font-size:1.05rem; text-align:center;}
+  .card p{color:var(--muted); font-size:.9rem; line-height:1.5; margin:0 0 12px; text-align:center;}
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:.82rem; color:var(--muted); margin-bottom:6px;}
+  .field input{width:100%; padding:13px; font-size:1rem; border-radius:10px;
+    border:1px solid var(--line); background:#0e0e13; color:var(--text);}
+  .field input:focus{outline:none; border-color:var(--gold);}
+  button{width:100%; padding:15px; font-size:1.02rem; font-weight:800; letter-spacing:.04em;
+    color:#1a1206; background:linear-gradient(180deg,var(--gold-soft),var(--gold));
+    border:none; border-radius:12px; cursor:pointer;}
+  button:disabled{opacity:.45; cursor:default;}
+  #ok{display:none; margin-top:12px; background:#0f2a1a; border:1px solid #2f7d4f; color:#bdf0cd;
+    border-radius:10px; padding:12px; font-size:.9rem; text-align:center;}
+  #err{display:none; margin-top:12px; background:#2a0f14; border:1px solid var(--red);
+    color:#ffb3b3; border-radius:10px; padding:12px; font-size:.88rem; text-align:center;}
+  .fine{color:var(--muted); font-size:.76rem; text-align:center; margin-top:12px;}
+  .hp{position:absolute; left:-9999px; width:1px; height:1px; opacity:0;}
+  footer{text-align:center; color:var(--muted); font-size:.8rem; margin-top:30px; line-height:1.7;}
+  footer a{color:var(--gold-soft); text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="logo-shield.webp" alt="Pinellas County Fire Conference logo">
+    <h1>Pinellas County Fire Conference</h1>
+    <div class="year">2027</div>
+    <p class="sub">Upcoming Conference &bull; Speaker Day + Live Fire HOT Days &bull; Pinellas County, FL</p>
+  </header>
+
+  <div class="panel">
+    <div class="show" id="show">
+      <img src="slide1.jpg" class="on" alt="Pinellas County Fire Conference banner">
+      <img src="slide2.webp" alt="Live fire training" loading="lazy">
+      <img src="slide3.webp" alt="Turnout gear ready" loading="lazy">
+      <div class="cap">🔥 Scenes from the 2026 conference</div>
+      <div class="dots"><i class="on"></i><i></i><i></i></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📬 Get Notified About 2027</h2>
+    <p>Interested in the upcoming conference? Leave your email and we'll contact you about <strong>6 months before</strong> the event — and whenever dates, host, classes and speakers are announced.</p>
+    <form id="f" novalidate>
+      <div class="field">
+        <label for="em">Email address</label>
+        <input type="email" id="em" placeholder="you@example.com" autocomplete="email" required>
+      </div>
+      <input type="text" id="hp" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <button type="submit" id="btn">NOTIFY ME 🔔</button>
+    </form>
+    <div id="ok">✅ You're on the list — see you in 2027! 🔥</div>
+    <div id="err"></div>
+    <p class="fine">We only email about the conference. No spam, ever.</p>
+  </div>
+
+  <footer>
+    Pinellas County Fire Conference<br>
+    <a href="https://www.instagram.com/pinellascountyfireconference/">Instagram</a> &bull;
+    <a href="https://www.facebook.com/Pinellascountyfireconference">Facebook</a> &bull;
+    <a href="https://pinellascountyfireconference.com/">2026 Photo Drop</a>
+  </footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+  // slideshow
+  const imgs = document.querySelectorAll('#show img');
+  const dots = document.querySelectorAll('.dots i');
+  let i = 0;
+  setInterval(() => {
+    imgs[i].classList.remove('on'); dots[i].classList.remove('on');
+    i = (i + 1) % imgs.length;
+    imgs[i].classList.add('on'); dots[i].classList.add('on');
+  }, 4000);
+
+  // email capture -> Firestore (project pcfc-photo-drop), collection notify2027
+  const firebaseConfig = {
+    apiKey: "AIzaSyAdMmgFx48tQyEmER_pj30q_3Ra3XsTN-I",
+    authDomain: "pcfc-photo-drop.firebaseapp.com",
+    projectId: "pcfc-photo-drop",
+    storageBucket: "pcfc-photo-drop.firebasestorage.app",
+    messagingSenderId: "708442037274",
+    appId: "1:708442037274:web:b6b9a7b74b8e9b0395c5a3"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  let authReady = firebase.auth().signInAnonymously().catch(() => null);
+
+  const form = document.getElementById('f');
+  const btn = document.getElementById('btn');
+  const okBox = document.getElementById('ok');
+  const errBox = document.getElementById('err');
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    errBox.style.display = 'none';
+    if (document.getElementById('hp').value) { // honeypot: silently accept bots
+      okBox.style.display = 'block'; form.reset(); return;
+    }
+    const email = document.getElementById('em').value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      errBox.textContent = 'Please enter a valid email address.';
+      errBox.style.display = 'block'; return;
+    }
+    btn.disabled = true; btn.textContent = 'SAVING…';
+    try {
+      await authReady;
+      await db.collection('notify2027').add({
+        email: email,
+        at: firebase.firestore.FieldValue.serverTimestamp(),
+        src: '2027-page'
+      });
+      form.style.display = 'none';
+      okBox.style.display = 'block';
+    } catch (err) {
+      btn.disabled = false; btn.textContent = 'NOTIFY ME 🔔';
+      errBox.textContent = 'Could not save your email just now — please try again in a moment.';
+      errBox.style.display = 'block';
+    }
+  });
+</script>
+</body>
+</html>
