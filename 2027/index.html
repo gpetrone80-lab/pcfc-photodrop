@@ -151,6 +151,17 @@
         at: firebase.firestore.FieldValue.serverTimestamp(),
         src: '2027-page'
       });
+      // notify the conference inbox (fire-and-forget; list itself lives in Firestore)
+      fetch('https://formsubmit.co/ajax/pinellascountyfireconference@gmail.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          email: email,
+          _subject: 'New PCFC 2027 signup: ' + email,
+          _template: 'table',
+          message: 'A new attendee signed up for 2027 conference notifications: ' + email
+        })
+      }).catch(() => {});
       form.style.display = 'none';
       okBox.style.display = 'block';
     } catch (err) {

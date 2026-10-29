@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2027 Signups — PCFC Admin</title>
+<style>
+  :root{
+    --gold:#f2b234; --gold-soft:#ffd166; --red:#d7263d;
+    --bg:#0b0b0e; --panel:#15151b; --line:#2a2a33; --text:#f4f1ea; --muted:#a9a49a;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%, #2a1408 0%, var(--bg) 55%) fixed, var(--bg);
+    color:var(--text); min-height:100vh; padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+  }
+  .wrap{width:100%; max-width:900px; margin:0 auto; padding:28px 0 48px;}
+  header{text-align:center; margin-bottom:8px;}
+  header img{width:88px; height:88px; border-radius:50%; border:3px solid var(--gold);
+    box-shadow:0 0 24px rgba(242,178,52,.35); background:#000;}
+  h1{font-size:1.4rem; letter-spacing:.06em; margin:14px 0 4px; text-transform:uppercase;
+    background:linear-gradient(180deg,var(--gold-soft),var(--gold) 60%,#b97a12);
+    -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .sub{color:var(--muted); font-size:.9rem; margin:0;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:22px 18px; margin:22px auto 0; max-width:420px; box-shadow:0 8px 30px rgba(0,0,0,.45);}
+  .card h2{margin:0 0 12px; font-size:1.05rem;}
+  .card p{color:var(--muted); font-size:.9rem; line-height:1.5; margin:0 0 12px;}
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:.82rem; color:var(--muted); margin-bottom:6px;}
+  .field input{width:100%; padding:13px; font-size:1rem; border-radius:10px;
+    border:1px solid var(--line); background:#0e0e13; color:var(--text);}
+  .field input:focus{outline:none; border-color:var(--gold);}
+  button{
+    width:100%; padding:15px; font-size:1.02rem; font-weight:800; letter-spacing:.04em;
+    color:#1a1206; background:linear-gradient(180deg,var(--gold-soft),var(--gold));
+    border:none; border-radius:12px; cursor:pointer;
+  }
+  button:disabled{opacity:.45; cursor:default;}
+  button.ghost{background:none; border:1px solid var(--line); color:var(--muted);
+    width:auto; padding:9px 16px; font-size:.85rem; font-weight:600;}
+  #err{display:none; margin-top:12px; background:#2a0f14; border:1px solid var(--red);
+    color:#ffb3b3; border-radius:10px; padding:12px; font-size:.88rem;}
+  #list{display:none;}
+  .toolbar{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:22px 0 14px; flex-wrap:wrap;}
+  .toolbar .count{color:var(--muted); font-size:.9rem;}
+  .toolbar .actions{display:flex; gap:8px; flex-wrap:wrap;}
+  table{width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+  th, td{padding:11px 14px; text-align:left; font-size:.92rem; border-bottom:1px solid var(--line);}
+  th{color:var(--gold-soft); font-size:.78rem; letter-spacing:.08em; text-transform:uppercase;}
+  tr:last-child td{border-bottom:none;}
+  td.date{color:var(--muted); white-space:nowrap;}
+  .empty{color:var(--muted); text-align:center; padding:26px; background:var(--panel); border:1px solid var(--line); border-radius:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="../logo.jpg" alt="Pinellas County Fire Conference logo">
+    <h1>2027 Signups</h1>
+    <p class="sub">Pinellas County Fire Conference — notification list</p>
+  </header>
+
+  <div class="card" id="loginCard">
+    <h2>Admin sign in</h2>
+    <p>Sign in with the same admin account as the photo gallery to see the 2027 email list.</p>
+    <form id="loginForm">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="pw">Password</label>
+        <input type="password" id="pw" autocomplete="current-password" required>
+      </div>
+      <button type="submit" id="loginBtn">SIGN IN</button>
+    </form>
+    <div id="err"></div>
+  </div>
+
+  <div id="list">
+    <div class="toolbar">
+      <span class="count" id="count">Loading…</span>
+      <span class="actions">
+        <button class="ghost" id="csv" disabled>⬇ Download CSV</button>
+        <button class="ghost" id="refresh">↻ Refresh</button>
+        <button class="ghost" id="signout">Sign out</button>
+      </span>
+    </div>
+    <div id="tableWrap"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAdMmgFx48tQyEmER_pj30q_3Ra3XsTN-I",
+    authDomain: "pcfc-photo-drop.firebaseapp.com",
+    projectId: "pcfc-photo-drop",
+    storageBucket: "pcfc-photo-drop.firebasestorage.app",
+    messagingSenderId: "708442037274",
+    appId: "1:708442037274:web:b6b9a7b74b8e9b0395c5a3"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const loginCard = document.getElementById('loginCard');
+  const listDiv = document.getElementById('list');
+  const errBox = document.getElementById('err');
+  let signups = [];
+  let loading = false;
+
+  document.getElementById('loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    errBox.style.display = 'none';
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true; btn.textContent = 'SIGNING IN…';
+    try {
+      await firebase.auth().signInWithEmailAndPassword(
+        document.getElementById('email').value.trim(),
+        document.getElementById('pw').value);
+    } catch (err) {
+      errBox.textContent = 'Sign-in failed — check the email and password.';
+      errBox.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'SIGN IN';
+    }
+  });
+  document.getElementById('signout').addEventListener('click', () => firebase.auth().signOut());
+  document.getElementById('refresh').addEventListener('click', loadSignups);
+  document.getElementById('csv').addEventListener('click', () => {
+    const rows = [['email', 'signed_up'], ...signups.map(s =>
+      [s.email, s.at ? s.at.toISOString() : ''])];
+    const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'pcfc-2027-signups.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  firebase.auth().onAuthStateChanged(user => {
+    if (user && !user.isAnonymous) {
+      loginCard.style.display = 'none';
+      listDiv.style.display = 'block';
+      loadSignups();
+    } else {
+      if (user && user.isAnonymous) firebase.auth().signOut();
+      loginCard.style.display = 'block';
+      listDiv.style.display = 'none';
+    }
+  });
+
+  async function loadSignups() {
+    if (loading) return;
+    loading = true;
+    const count = document.getElementById('count');
+    count.textContent = 'Loading…';
+    try {
+      const snap = await db.collection('notify2027').orderBy('at', 'desc').get();
+      const seen = new Set();
+      signups = [];
+      snap.forEach(doc => {
+        const d = doc.data();
+        if (d.email && !seen.has(doc.id)) {
+          seen.add(doc.id);
+          signups.push({ email: d.email, at: d.at && d.at.toDate ? d.at.toDate() : null });
+        }
+      });
+      count.textContent = signups.length + (signups.length === 1 ? ' signup' : ' signups');
+      document.getElementById('csv').disabled = !signups.length;
+      const wrap = document.getElementById('tableWrap');
+      if (!signups.length) {
+        wrap.innerHTML = '<div class="empty">No signups yet — share the /2027 link and they will appear here.</div>';
+      } else {
+        wrap.innerHTML = '<table><tr><th>Email</th><th>Signed up</th></tr>' +
+          signups.map(s => '<tr><td>' + s.email.replace(/</g, '&lt;') + '</td><td class="date">' +
+            (s.at ? s.at.toLocaleString() : '—') + '</td></tr>').join('') + '</table>';
+      }
+    } catch (err) {
+      count.textContent = 'Could not load the list (permission or connection).';
+    } finally {
+      loading = false;
+    }
+  }
+</script>
+</body>
+</html>
