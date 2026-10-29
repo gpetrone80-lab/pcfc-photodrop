@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /config/site {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.email != null;
+    }
+    // 2027 landing page email signups
+    match /notify2027/{docId} {
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['email', 'at', 'src'])
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 254;
+      allow read, delete: if request.auth != null && request.auth.token.email == 'gpetrone80@gmail.com';
+      allow update: if false;
+    }
+  }
+}
