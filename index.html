@@ -1,304 +1,32 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>PCFC Photo Drop — Pinellas County Fire Conference</title>
-<meta name="description" content="Were you at the Pinellas County Fire Conference? Drop your photos here — no account, no sign-in.">
-<link rel="icon" type="image/png" href="favicon.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta property="og:title" content="PCFC Photo Drop — Pinellas County Fire Conference">
-<meta property="og:description" content="Were you at the conference? Share your photos — no account, no sign-in.">
-<meta property="og:image" content="https://pinellascountyfireconference.com/logo.jpg">
-<meta property="og:url" content="https://pinellascountyfireconference.com">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pinellas County Fire Conference</title>
+<meta name="description" content="The annual Pinellas County Fire Conference: speaker day and live fire training in Pinellas County, Florida. Get 2027 updates, share your photos and browse the 2026 album.">
+<link rel="canonical" href="https://pinellascountyfireconference.com/">
+<meta name="theme-color" content="#000000">
+<link rel="icon" type="image/png" href="assets/img/favicon.png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <meta property="og:type" content="website">
-<meta name="theme-color" content="#0b0b0e">
-<style>
-  :root{
-    --gold:#f2b234; --gold-soft:#ffd166; --red:#d7263d;
-    --bg:#0b0b0e; --panel:#15151b; --line:#2a2a33; --text:#f4f1ea; --muted:#a9a49a;
-  }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  body{
-    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:radial-gradient(1200px 600px at 50% -10%, #2a1408 0%, var(--bg) 55%) fixed, var(--bg);
-    color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center;
-    padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
-  }
-  .wrap{width:100%; max-width:560px; margin:0 auto; padding:28px 0 48px;}
-  header{text-align:center; margin-bottom:8px;}
-  header img{width:128px; height:128px; border-radius:50%; border:3px solid var(--gold);
-    box-shadow:0 0 32px rgba(242,178,52,.35); background:#000;}
-  h1{font-size:1.65rem; letter-spacing:.06em; margin:16px 0 4px; text-transform:uppercase;
-    background:linear-gradient(180deg,var(--gold-soft),var(--gold) 60%,#b97a12);
-    -webkit-background-clip:text; background-clip:text; color:transparent;}
-  .sub{color:var(--muted); font-size:.95rem; margin:0 0 4px;}
-  .dates{color:var(--gold-soft); font-weight:700; letter-spacing:.12em; font-size:.8rem; margin:10px 0 0;}
-  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px;
-    padding:22px 18px; margin-top:22px; box-shadow:0 8px 30px rgba(0,0,0,.45);}
-  .card h2{margin:0 0 6px; font-size:1.1rem;}
-  .card p{color:var(--muted); font-size:.92rem; line-height:1.5; margin:0 0 14px;}
-  label.drop{
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
-    border:2px dashed #4a4a55; border-radius:14px; padding:34px 16px; cursor:pointer;
-    transition:border-color .2s, background .2s; text-align:center; font-weight:600;
-  }
-  label.drop:hover, label.drop:active{border-color:var(--gold); background:rgba(242,178,52,.06);}
-  label.drop .icon{font-size:2.2rem;}
-  label.drop small{color:var(--muted); font-weight:400;}
-  input[type=file]{display:none;}
-  button{
-    width:100%; margin-top:14px; padding:15px; font-size:1.05rem; font-weight:800; letter-spacing:.04em;
-    color:#1a1206; background:linear-gradient(180deg,var(--gold-soft),var(--gold));
-    border:none; border-radius:12px; cursor:pointer;
-  }
-  button:disabled{opacity:.45; cursor:default;}
-  #list{margin-top:16px; display:flex; flex-direction:column; gap:10px;}
-  .file{background:#0e0e13; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:.85rem;}
-  .file .row{display:flex; justify-content:space-between; gap:8px; margin-bottom:6px;}
-  .file .name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .file .pct{color:var(--gold-soft); font-variant-numeric:tabular-nums;}
-  .bar{height:6px; background:#26262e; border-radius:4px; overflow:hidden;}
-  .bar i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--gold),var(--red)); transition:width .15s;}
-  .file.done{border-color:#2f7d4f;}
-  .file.done .pct{color:#7be3a0;}
-  .file.err{border-color:var(--red);}
-  .file.err .pct{color:#ff8a8a;}
-  #done{display:none; margin-top:16px; background:#0f2a1a; border:1px solid #2f7d4f; color:#bdf0cd;
-    border-radius:12px; padding:14px; text-align:center; font-weight:600;}
-  #closedMsg{display:none; margin-top:16px; background:#2a0f14; border:1px solid var(--red);
-    color:#ffb3b3; border-radius:12px; padding:14px; text-align:center; font-weight:600;}
-  #mine{margin-top:18px;}
-  #mine h3{margin:0 0 4px; font-size:1rem;}
-  .mine-hint{color:var(--muted); font-size:.82rem; margin:0 0 10px;}
-  .mine-item{display:flex; align-items:center; justify-content:space-between; gap:10px;
-    background:#0e0e13; border:1px solid var(--line); border-radius:10px;
-    padding:10px 12px; font-size:.85rem; margin-bottom:8px;}
-  .mine-item .name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .mine-item button{width:auto; margin:0; padding:8px 14px; font-size:.82rem; font-weight:700;
-    background:none; border:1px solid var(--red); color:#ff8a8a; border-radius:8px; cursor:pointer;}
-  .release-check{display:flex; gap:12px; align-items:flex-start; margin-top:16px; cursor:pointer;
-    background:#0e0e13; border:1px solid var(--line); border-radius:12px; padding:14px;}
-  .release-check input{width:24px; height:24px; flex:none; margin:2px 0 0; accent-color:var(--gold); cursor:pointer;}
-  .release-check span{font-size:.95rem; font-weight:600; line-height:1.45;}
-  .release-text{margin-top:10px; background:#0e0e13; border:1px solid var(--line); border-radius:12px;
-    padding:12px 14px; max-height:170px; overflow-y:auto; color:var(--muted);
-    font-size:.78rem; line-height:1.55;}
-  .release-text strong{color:var(--text); letter-spacing:.04em;}
-  .release-text p{margin:0 0 8px; color:var(--muted); font-size:.78rem;}
-  footer{margin-top:30px; text-align:center; color:var(--muted); font-size:.78rem; line-height:1.6;}
-  footer a{color:var(--gold-soft);}
-</style>
+<meta property="og:site_name" content="Pinellas County Fire Conference">
+<meta property="og:title" content="Pinellas County Fire Conference">
+<meta property="og:description" content="The annual Pinellas County Fire Conference: speaker day and live fire training in Pinellas County, Florida. Get 2027 updates, share your photos and browse the 2026 album.">
+<meta property="og:url" content="https://pinellascountyfireconference.com/">
+<meta property="og:image" content="https://pinellascountyfireconference.com/assets/img/share.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <img src="logo.jpg" alt="Pinellas County Fire Conference logo">
-    <h1>PCFC Photo Drop</h1>
-    <p class="sub">Were you at the conference? Share the moments you captured.</p>
-    <p class="dates">OCTOBER 26&ndash;28 &bull; PINELLAS COUNTY, FL</p>
-  </header>
-
-  <div class="card">
-    <h2>📸 Drop your photos</h2>
-    <p>Tap below, pick photos from your phone, and hit upload. No account, no sign-in &mdash; it just works. Your shots may be featured on our social pages!</p>
-    <label class="drop" for="files">
-      <span class="icon">🔥</span>
-      <span>Choose photos from your phone</span>
-      <small>JPG / PNG / HEIC &bull; up to 15&nbsp;MB each</small>
-    </label>
-    <input type="file" id="files" accept="image/*" multiple>
-    <label class="release-check" for="consent">
-      <input type="checkbox" id="consent">
-      <span>✅ I agree to the Photo Release below and confirm I have the right to share these photos.</span>
-    </label>
-    <div class="release-text">
-      <p><strong>PHOTO RELEASE</strong> — By checking the box and uploading, I grant the Pinellas County Fire Conference, its organizers, and Gianluca Petrone permission to use, copy, edit, crop, publish, and share the photo(s) I upload — on Facebook, Instagram, the conference website, and other promotional materials — without payment, royalties, or any further approval from me.</p>
-      <p>I confirm the photos are mine to share, and that I have permission from the people pictured where it is needed. I understand the photos may show my own image and likeness, and I release the Pinellas County Fire Conference and its organizers from any claims or liability connected with this use.</p>
-      <p>I am 18 years or older, or I am the parent/legal guardian of the minor pictured. If I later want a photo taken down, I can contact the conference and it will be removed from future use.</p>
-    </div>
-    <button id="upload" disabled>Select photos to begin</button>
-    <div id="list"></div>
-    <div id="done">✅ All photos uploaded &mdash; thank you for sharing the fire! 🔥</div>
-    <div id="closedMsg">📵 Photo uploads are currently closed — please check back later!</div>
-    <div id="mine" style="display:none;">
-      <h3>Your uploads</h3>
-      <p class="mine-hint">Only you can delete these — nobody else can touch them.</p>
-      <div id="mineList"></div>
-    </div>
-  </div>
-
-  <footer>
-    Pinellas County Fire Conference &bull; Hosted by local training chiefs &amp; instructors<br>
-    Follow us: <a href="https://www.instagram.com/pinellascountyfireconference/">Instagram</a> &bull;
-    <a href="https://www.facebook.com/">Facebook</a>
-  </footer>
-</div>
-
+<noscript><p style="padding:24px;color:#fff">Please turn on JavaScript to use this site.</p></noscript>
+<div class="cq"><div id="app" class="site theme-e" data-page="home"></div></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script>
-/* ── Firebase config — paste your project's web config below ── */
-const firebaseConfig = {
-  apiKey: "AIzaSyAdMmgFx48tQyEmER_pj30q_3Ra3XsTN-I",
-  authDomain: "pcfc-photo-drop.firebaseapp.com",
-  projectId: "pcfc-photo-drop",
-  storageBucket: "pcfc-photo-drop.firebasestorage.app",
-  messagingSenderId: "708442037274",
-  appId: "1:708442037274:web:b6b9a7b74b8e9b0395c5a3"
-};
-const READY = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY";
-if (READY) { firebase.initializeApp(firebaseConfig); }
-const storage = READY ? firebase.storage() : null;
-
-/* Invisible per-visitor identity so each person can delete only their own uploads */
-let anonUser = null;
-if (READY) {
-  firebase.auth().onAuthStateChanged(u => { anonUser = u; renderMine(); });
-  firebase.auth().signInAnonymously().catch(() => {});
-}
-
-/* Upload kill switch — admin flips it from the admin page, this page obeys live */
-let uploadsEnabled = true;
-const closedMsg = document.getElementById('closedMsg');
-function applyKillSwitch(){
-  if (!uploadsEnabled) {
-    btn.disabled = true;
-    btn.textContent = 'Uploads closed';
-    closedMsg.style.display = 'block';
-  } else {
-    closedMsg.style.display = 'none';
-    refreshBtn();
-  }
-}
-if (READY) {
-  try {
-    firebase.firestore().collection('config').doc('site').onSnapshot(doc => {
-      uploadsEnabled = !doc.exists || doc.data().uploadsEnabled !== false;
-      applyKillSwitch();
-    }, () => { uploadsEnabled = true; applyKillSwitch(); });
-  } catch(e) { /* stay open */ }
-}
-
-const input = document.getElementById('files');
-const btn = document.getElementById('upload');
-const consent = document.getElementById('consent');
-const list = document.getElementById('list');
-const doneBox = document.getElementById('done');
-let queue = [];
-
-/* Upload stays locked until: uploads open + photos picked + release agreed */
-function refreshBtn(){
-  if (!uploadsEnabled) { btn.disabled = true; btn.textContent = 'Uploads closed'; return; }
-  if (!queue.length) { btn.disabled = true; btn.textContent = 'Select photos to begin'; return; }
-  if (!consent.checked) { btn.disabled = true; btn.textContent = '☝️ Check the release box to upload'; return; }
-  btn.disabled = false;
-  btn.textContent = `Upload ${queue.length} photo${queue.length > 1 ? 's' : ''} 🔥`;
-}
-consent.addEventListener('change', refreshBtn);
-
-input.addEventListener('change', () => {
-  queue = [...input.files].filter(f => f.type.startsWith('image/'));
-  list.innerHTML = ''; doneBox.style.display = 'none';
-  if (!queue.length) { refreshBtn(); return; }
-  refreshBtn();
-  queue.forEach(f => {
-    const d = document.createElement('div');
-    d.className = 'file';
-    const row = document.createElement('div');
-    row.className = 'row';
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'name';
-    nameSpan.textContent = f.name;
-    const pct = document.createElement('span');
-    pct.className = 'pct';
-    pct.textContent = 'waiting';
-    row.appendChild(nameSpan);
-    row.appendChild(pct);
-    const bar = document.createElement('div');
-    bar.className = 'bar';
-    bar.appendChild(document.createElement('i'));
-    d.appendChild(row);
-    d.appendChild(bar);
-    list.appendChild(d);
-  });
-  applyKillSwitch();
-});
-
-btn.addEventListener('click', async () => {
-  if (!READY) { alert('Uploads are not configured yet — please check back soon!'); return; }
-  if (!anonUser) { alert('Still connecting — please try again in a moment.'); return; }
-  if (!uploadsEnabled) { alert('Uploads are currently closed.'); return; }
-  if (!consent.checked) { alert('Please check the Photo Release box to upload.'); return; }
-  btn.disabled = true; btn.textContent = 'Uploading…';
-  const rows = [...list.children];
-  let ok = 0;
-  for (let i = 0; i < queue.length; i++) {
-    const f = queue[i], row = rows[i];
-    const bar = row.querySelector('.bar i'), pct = row.querySelector('.pct');
-    try {
-      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const ref = storage.ref(`pcfc-2026/${anonUser.uid}/${stamp}_${safe}`);
-      const task = ref.put(f, { customMetadata: {
-        photoRelease: 'agreed',
-        releaseVersion: '2026-10-23',
-        consentAt: new Date().toISOString()
-      }});
-      await new Promise((res, rej) => {
-        task.on('state_changed',
-          s => { const p = Math.round(s.bytesTransferred / s.totalBytes * 100);
-                 bar.style.width = p + '%'; pct.textContent = p + '%'; },
-          rej, res);
-      });
-      row.classList.add('done'); pct.textContent = 'uploaded ✓'; ok++;
-      saveMine(ref.fullPath, f.name);    } catch (e) {
-      row.classList.add('err'); pct.textContent = 'failed — try again';
-    }
-  }
-  input.value = ''; queue = [];
-  refreshBtn();
-  if (ok === rows.length && ok > 0) doneBox.style.display = 'block';
-});
-
-/* ── Your uploads: delete only your own ── */
-const mineBox = document.getElementById('mine');
-const mineList = document.getElementById('mineList');
-const MINE_KEY = 'pcfc_my_uploads';
-const getMine = () => { try { return JSON.parse(localStorage.getItem(MINE_KEY)) || []; } catch(e){ return []; } };
-const setMine = a => localStorage.setItem(MINE_KEY, JSON.stringify(a));
-function saveMine(path, name){
-  const a = getMine();
-  if (!a.some(x => x.path === path)) { a.unshift({path, name}); setMine(a); }
-  renderMine();
-}
-function renderMine(){
-  const a = getMine();
-  mineBox.style.display = a.length ? 'block' : 'none';
-  mineList.innerHTML = '';
-  a.forEach(item => {
-    const d = document.createElement('div');
-    d.className = 'mine-item';
-    const s = document.createElement('span'); s.className = 'name'; s.textContent = item.name;
-    const b = document.createElement('button'); b.textContent = 'Delete';
-    b.addEventListener('click', async () => {
-      if (!confirm('Delete "' + item.name + '"?')) return;
-      b.disabled = true; b.textContent = '…';
-      try {
-        await storage.ref(item.path).delete();
-        setMine(getMine().filter(x => x.path !== item.path));
-        renderMine();
-      } catch(e) {
-        b.disabled = false; b.textContent = 'Delete';
-        alert('Could not delete — it may have been uploaded from a different browser.');
-      }
-    });
-    d.appendChild(s); d.appendChild(b); mineList.appendChild(d);
-  });
-}
-renderMine();
-</script>
+<script src="assets/site.js"></script>
 </body>
 </html>
