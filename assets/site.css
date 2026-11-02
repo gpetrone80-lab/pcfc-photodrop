@@ -327,3 +327,26 @@ a.btn{text-decoration:none}
 @container site (max-width: 1120px){.emeta{display:none}}
 @container site (max-width: 860px){.emenu{display:none}.eham{display:block}}
 @container site (max-width: 640px){.doors{grid-template-columns:minmax(0,1fr)}.door{aspect-ratio:16/10}.agrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* round 2: contact form, admin extras */
+@container site (max-width: 1000px){.emenu{display:none}.eham{display:block}}
+.field select,.field textarea{min-height:52px;border-radius:var(--r);border:2px solid var(--line-strong);padding:10px 14px;background:var(--input-bg);color:var(--ink);font:inherit;font-size:16px;width:100%}
+.field textarea{resize:vertical;min-height:140px}
+.field select:focus,.field textarea:focus{border-color:var(--accent);outline:none}
+.obox h3+p,.obox p+h3{margin-top:4px}
+.btn.o{background:#f2a33a;color:#000}
+.tile .star{position:absolute;top:8px;right:8px;background:#f2a33a;color:#000;font-size:11px;font-weight:800;padding:3px 7px;font-family:var(--display);letter-spacing:.04em}
+.srcs{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--surface);border:var(--card-border);padding:12px}
+.srcs>b{margin-right:4px;font-size:14px}
+.chip{background:#1c1c1c;border:1px solid #333;padding:4px 10px;font-size:13.5px}
+.chip b{color:#f2a33a;margin-left:4px}
+.obox.lm{gap:10px}
+.obox.lm h3{text-align:left}
+.lmrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.lmout{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lmout code{background:#000;border:1px solid #333;padding:10px 12px;font-size:13.5px;overflow-wrap:anywhere;flex:1;min-width:0}
+.qrs{display:flex;gap:16px;flex-wrap:wrap}
+.qrs a{display:grid;gap:6px;justify-items:center;color:#fff;text-decoration:none;font-size:13px}
+.qrs img{background:#fff;padding:6px;width:140px;height:140px}
+@container site (max-width: 640px){.lmrow{grid-template-columns:minmax(0,1fr)}}
+.emenu>a.plain,.emenu .dd>button{white-space:nowrap;padding-inline:9px}
+@container site (max-width: 1260px){.emeta{display:none}}
