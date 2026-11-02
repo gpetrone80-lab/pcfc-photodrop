@@ -24,6 +24,8 @@ const CFG = {
   notifyInbox: "pinellascountyfireconference@gmail.com", // gets an email per sign-up (formsubmit.co)
   contactEmail: "pinellascountyfireconference@gmail.com", // shown on the Contact page; contact-form messages go here
   lastDates: "October 26–28, 2026",
+  // 2026 Student Feedback Survey (Microsoft Forms). Set surveyId to "" to hide the survey everywhere.
+  surveyId: "DDvvNCA7tEmFQjTii6a2aPU3HCWMfjdGgPtQYHsvZUNUN1dVWUxSOURHTVM0TVJTT1hYRjFXUjFWVi4u",
   nextYear: "2027",
   nextDates: "Dates TBA",             // e.g. "October 25–27, 2027" once announced
   location: "Pinellas County, FL",
@@ -41,8 +43,10 @@ const PREVIEW = !!window.PCFC_PREVIEW;
 const app = document.getElementById("app");
 const fb = (!PREVIEW && window.firebase) ? (firebase.apps.length ? firebase.app() : firebase.initializeApp(CFG.firebase)) : null;
 const DEMO = !fb;
-const URLS = { home: ROOT, "2027": ROOT + "2027/", photos: ROOT + "share-photos/", album: ROOT + "photo-album/", contact: ROOT + "contact/", admin: ROOT + "admin/" };
-const PUBLIC = { home: "/", "2027": "/2027/", photos: "/share-photos/", album: "/photo-album/", contact: "/contact/" };
+const URLS = { home: ROOT, "2027": ROOT + "2027/", photos: ROOT + "share-photos/", album: ROOT + "photo-album/", contact: ROOT + "contact/", survey: ROOT + "survey/", admin: ROOT + "admin/" };
+const PUBLIC = { home: "/", "2027": "/2027/", photos: "/share-photos/", album: "/photo-album/", contact: "/contact/", survey: "/survey/" };
+const SURVEY_URL = "https://forms.cloud.microsoft/pages/responsepage.aspx?id=" + CFG.surveyId + "&route=shorturl";
+const SURVEY_EMBED = "https://forms.cloud.microsoft/pages/responsepage.aspx?id=" + CFG.surveyId + "&embed=true";
 const SITE = "https://pinellascountyfireconference.com";
 /* Where did this visitor come from? Links you post can carry ?src=fb-oct (or utm_source/utm_campaign).
    The tag is remembered for the visit and saved with sign-ups and photo uploads. */
@@ -98,7 +102,7 @@ const go = (page, label, cls, hash) => `<a class="${cls || ""}" href="${URLS[pag
 
 /* ───────────── Header / footer ───────────── */
 function nav() {
-  const L = [["home", "Home"], ["2027", CFG.nextYear + " Conference"], ["photos", "Share Photos"], ["album", "2026 Photo Album"], ["contact", "Contact"]];
+  const L = [["home", "Home"], ["2027", CFG.nextYear + " Conference"], ["photos", "Share Photos"], ["album", "2026 Photo Album"]].concat(CFG.surveyId ? [["survey", "Survey"]] : [], [["contact", "Contact"]]);
   const link = ([p, l]) => `<a href="${URLS[p]}" data-go="${p}" class="plain"${S.page === p ? ' aria-current="page"' : ""}>${l}</a>`;
   const social = ext(CFG.facebook, "Facebook ↗") + ext(CFG.instagram, "Instagram ↗");
   return `<header class="enav"><div class="wrap">
@@ -117,7 +121,7 @@ function footer() {
     <div class="stack"><a class="ebrand" href="${URLS.home}" data-go="home">${BADGE}<span class="eword">Pinellas County<b>Fire Conference</b></span></a>
       <small style="text-transform:uppercase;letter-spacing:.06em;font-size:12px">Follow us</small>
       <div class="social"><a href="${CFG.facebook}" target="_blank" rel="noopener" aria-label="Facebook">${I.fb}</a><a href="${CFG.instagram}" target="_blank" rel="noopener" aria-label="Instagram">${I.ig}</a></div></div>
-    <div><h2 class="fh">Pages</h2>${f(go("home", "Home"))}${f(go("2027", CFG.nextYear + " Conference"))}${f(go("photos", "Share Photos"))}${f(go("album", "2026 Photo Album"))}${f(go("contact", "Contact"))}</div>
+    <div><h2 class="fh">Pages</h2>${f(go("home", "Home"))}${f(go("2027", CFG.nextYear + " Conference"))}${f(go("photos", "Share Photos"))}${f(go("album", "2026 Photo Album"))}${CFG.surveyId ? f(go("survey", "2026 Survey")) : ""}${f(go("contact", "Contact"))}</div>
     <div><h2 class="fh">Event info</h2>${f(go("2027", "What to expect", "", "schedule"))}${f(go("2027", "Mailing list", "", "list"))}${f(go("photos", "Photo release", "", "release"))}${f(ext(CFG.albumUrl, "Full album on Google Photos"))}</div>
     <div><h2 class="fh">Organizers</h2>${f(go("admin", "Organizer sign-in"))}${f(ext(CFG.facebook, "Facebook"))}${f(ext(CFG.instagram, "Instagram"))}</div>
    </div><p class="ecopy">© ${new Date().getFullYear()} Pinellas County Fire Conference · Hosted every year in Pinellas County, Florida · Hosted by local training chiefs &amp; instructors</p></div></footer>`;
@@ -129,6 +133,7 @@ function quickLinks() {
     ${go("2027", "What to expect", "", "schedule")}
     ${go("photos", "Share your 2026 photos")}
     ${go("album", "2026 photo album")}
+    ${CFG.surveyId ? go("survey", "Take the 2026 survey") : ""}
     ${go("contact", "Contact us")}
     ${ext(CFG.facebook, "Follow us on Facebook ↗")}
     ${ext(CFG.instagram, "Follow us on Instagram ↗")}
@@ -296,6 +301,7 @@ function home() {
   return `${nav()}<main>
   ${hero("live-fire", "Train with the Pinellas County fire family", `Speaker day and live fire HOT days, run by local training chiefs and instructors. The ${CFG.nextYear} conference is being planned now.`,
      go("2027", `Get ${CFG.nextYear} updates`, "btn", "list") + go("photos", "Share your 2026 photos", "btn w"))}
+  ${CFG.surveyId ? `<section class="sband"><div class="wrap"><p><b>Were you at the 2026 conference?</b> Tell us what to keep and what to change. The survey takes about 5 minutes.</p>${go("survey", "Take the survey", "btn o")}</div></section>` : ""}
   <section class="esec"><div class="wrap"><h2 class="ecenter">Start here</h2>
    <div class="doors">${door("2027", "instructors", CFG.nextYear + " Conference", "Dates, host, classes and the mailing list", "See what's next")}${door("photos", "two-man-can", "Share Photos", "Were you there in 2026? Upload your shots", "Upload photos")}${door("album", "crew", "2026 Photo Album", "Scenes from the training ground", "Browse photos")}</div></div></section>
   <section class="esec" id="why" style="padding-top:0"><div class="wrap"><h2 class="ecenter">Why firefighters come back every year</h2>
@@ -336,6 +342,19 @@ function albumPage() {
    <div class="ectas">${ext(CFG.albumUrl, "Open the full album on Google Photos ↗", "btn o")}${go("photos", "Add your photos", "btn w")}</div></div></section>
   </main>${footer()}
   ${L ? `<div class="lightbox" data-act="close" role="dialog" aria-label="${esc(L.cap)}"><div class="box"><img src="${esc(L.full)}" alt="${esc(L.cap)}"><div class="row"><span>${esc(L.cap)}</span><span style="display:flex;gap:8px"><button type="button" class="btn sm alt lbx" data-act="anav" data-d="-1" aria-label="Previous photo">←</button><button type="button" class="btn sm alt lbx" data-act="anav" data-d="1" aria-label="Next photo">→</button><button type="button" class="btn sm alt lbx" data-act="close">Close</button></span></div></div></div>` : ""}`;
+}
+function surveyPage() {
+  return `${nav()}<main>${crumb("2026 Survey", "2026 feedback survey")}
+  <section class="esec" style="padding-bottom:16px"><div class="wrap stack" style="max-width:820px">
+    <h2 style="font-size:clamp(28px,3cqi + 16px,44px)">Thank you for attending</h2>
+    <p class="lede">Your honest feedback on the 2026 Pinellas County Fire Conference (${esc(CFG.lastDates)}) shapes next year's conference. It takes about five minutes, and name and department are optional.</p>
+    <div class="ectas" style="justify-content:flex-start;margin-top:0">${ext(SURVEY_URL, "Open the survey in full screen ↗", "btn o")}</div>
+    <p class="fine">You can fill it in right here, or open it full screen. Responses go straight to the conference organizers through Microsoft Forms.</p></div></section>
+  <section class="esec" style="padding-top:0"><div class="wrap" style="max-width:820px"><div class="sframe">
+    <iframe src="${SURVEY_EMBED}" title="2026 Pinellas County Fire Conference feedback survey" loading="lazy" allowfullscreen></iframe></div>
+    <p class="fine" style="margin-top:10px">Survey not showing? ${ext(SURVEY_URL, "Open it here ↗", "inlink")}</p></div></section>
+  <section class="esec" style="padding-top:0"><div class="wrap"><div class="crossband"><div><h3>Done? Share your photos too</h3><p>Add your shots from the 2026 conference to the photo album.</p></div>${go("photos", "Share photos", "btn o")}</div></div></section>
+  </main>${footer()}`;
 }
 const TOPICS = [["general", "General question"], ["classes", "Classes & training"], ["vendor", "Vendors & sponsors"], ["photo", "Photo takedown request"], ["media", "Media"]];
 function contactPage() {
@@ -414,12 +433,13 @@ function admin() {
   } else {
     body = `<div class="switch"><div><b>Photo uploads</b><p class="fine">${S.uploadsOpen ? "On: attendees can upload photos right now." : "Off: the home page says uploads are closed and points visitors to the mailing list."}</p></div><button type="button" role="switch" aria-checked="${S.uploadsOpen}" aria-label="Photo uploads" data-act="toggle"></button></div>
      <div class="obox lm"><h3>Share-link maker</h3><p class="fine">Add a tag to every link you post so the ${CFG.nextYear} sign-ups tab shows which post brought people in. Use a short tag like <b>fb-nov</b>, <b>ig-story</b> or <b>flyer</b>.</p>
-      <div class="lmrow"><div class="field"><label for="lmp">Page</label><select id="lmp">${Object.entries({ home: "Home", "2027": CFG.nextYear + " Conference", photos: "Share Photos", album: "2026 Photo Album", contact: "Contact" }).map(([k, l]) => `<option value="${k}"${A.lmPage === k ? " selected" : ""}>${l}</option>`).join("")}</select></div>
+      <div class="lmrow"><div class="field"><label for="lmp">Page</label><select id="lmp">${Object.entries({ home: "Home", "2027": CFG.nextYear + " Conference", photos: "Share Photos", album: "2026 Photo Album", survey: "2026 Survey", contact: "Contact" }).map(([k, l]) => `<option value="${k}"${A.lmPage === k ? " selected" : ""}>${l}</option>`).join("")}</select></div>
       <div class="field"><label for="lmt">Tag</label><input id="lmt" placeholder="fb-nov" value="${esc(A.lmTag)}"></div></div>
       <div class="lmout"><code id="lmo">${esc(lmLink())}</code><button type="button" class="btn sm" data-act="lmcopy">Copy link</button></div></div>
      <div class="obox lm"><h3>QR codes</h3><p class="fine">Print these on flyers and table tents. Each one is already tagged, so scans show up in the sign-ups tab and in uploaded photo details.</p>
       <div class="qrs"><a href="${ROOT}qr-share-photos.png" target="_blank" rel="noopener"><img src="${ROOT}qr-share-photos.png" alt="QR code for Share Photos" width="140" height="140"><span>Share Photos</span></a>
-      <a href="${ROOT}qr-2027-list.png" target="_blank" rel="noopener"><img src="${ROOT}qr-2027-list.png" alt="QR code for the ${CFG.nextYear} mailing list" width="140" height="140"><span>${CFG.nextYear} mailing list</span></a></div></div>`;
+      <a href="${ROOT}qr-2027-list.png" target="_blank" rel="noopener"><img src="${ROOT}qr-2027-list.png" alt="QR code for the ${CFG.nextYear} mailing list" width="140" height="140"><span>${CFG.nextYear} mailing list</span></a>
+      <a href="${ROOT}qr-survey.png" target="_blank" rel="noopener"><img src="${ROOT}qr-survey.png" alt="QR code for the 2026 survey" width="140" height="140"><span>2026 survey</span></a></div></div>`;
   }
   return `<div class="admin"><aside class="side"><a class="brand" href="${URLS.home}" data-go="home">${BADGE}<span>PCFC Admin<small>${esc(A.user.email || "Organizer")}</small></span></a>
     <button type="button" data-act="atab" data-t="photos" ${cur("photos")}>Photos <span>${items.length}</span></button>
@@ -528,7 +548,7 @@ let slideT;
 function render() {
   const y = window.scrollY, keep = {}, focusId = document.activeElement && app.contains(document.activeElement) ? document.activeElement.id : "";
   app.querySelectorAll("input[id],textarea[id],select[id]").forEach(el => { if (el.type !== "file" && el.type !== "checkbox" && el.id !== "lmt") keep[el.id] = el.value; });
-  app.innerHTML = ({ home, "2027": p2027, photos: photosPage, album: albumPage, contact: contactPage, admin })[S.page]();
+  app.innerHTML = ({ home, "2027": p2027, photos: photosPage, album: albumPage, contact: contactPage, survey: surveyPage, admin })[S.page]();
   for (const id in keep) { const el = document.getElementById(id); if (el && el.tagName !== "SELECT" && !el.value) el.value = keep[id]; }
   if (focusId) { const f = document.getElementById(focusId); if (f) f.focus({ preventScroll: true }); }
   window.scrollTo(0, y);

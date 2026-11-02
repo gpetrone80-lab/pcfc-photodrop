@@ -350,3 +350,11 @@ a.btn{text-decoration:none}
 @container site (max-width: 640px){.lmrow{grid-template-columns:minmax(0,1fr)}}
 .emenu>a.plain,.emenu .dd>button{white-space:nowrap;padding-inline:9px}
 @container site (max-width: 1260px){.emeta{display:none}}
+/* survey */
+.sband{background:#f2a33a;color:#000}
+.sband .wrap{display:flex;gap:12px 24px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-block:16px}
+.sband p{font-size:16.5px;max-width:70ch}
+.sband .btn.o{background:#000;color:#fff}
+.sframe{background:#fff;border:1.5px solid #fff}
+.sframe iframe{display:block;width:100%;height:1500px;border:0;max-width:100%}
+@container site (max-width: 640px){.sframe iframe{height:1700px}}
