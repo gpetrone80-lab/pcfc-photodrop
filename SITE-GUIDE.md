@@ -7,6 +7,7 @@
 | 2027 Conference (what to expect + mailing list) | /2027/ |
 | Share Photos (upload + photo release) | /share-photos/ |
 | 2026 Photo Album | /photo-album/ |
+| 2026 Feedback Survey (Microsoft Form) | /survey/ |
 | Contact | /contact/ |
 | Organizer admin | /admin/ |
 
@@ -38,6 +39,7 @@ Links without a tag show as "direct".
 ## QR codes
 - `qr-share-photos.png` → Share Photos (tag `qr-tent`), also used on `table-tent.html`
 - `qr-2027-list.png` → 2027 mailing list (tag `qr`)
+- `qr-survey.png` → 2026 feedback survey page (tag `qr-survey`)
 - The old `qr-code.png` is still in the repository, unchanged.
 
 ## Contact form
@@ -56,3 +58,8 @@ Settings at the top of `assets/site.js`:
 `assets/img/badge-conference.webp`, `badge-conference.png` (200 px) and `badge-conference-600.png` (large, for flyers)
 read **Pinellas County · Florida · Fire Conference**. The earlier "Fire Rescue" version (`badge.png`) is kept
 but no longer used.
+
+## Survey
+The 2026 Student Feedback Survey (Microsoft Forms) is shown on `/survey/`, with a banner on the home page and a
+"Survey" menu item. Responses stay in Microsoft Forms. To switch to a different form, paste its `id=` value into
+`surveyId` at the top of `assets/site.js`. Set `surveyId: ""` to hide the survey, the banner and the menu item.
