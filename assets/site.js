@@ -82,6 +82,12 @@ function toast(m) {
   setTimeout(() => { t.textContent = m; t.classList.add("on"); }, 30);
   toastT = setTimeout(() => { t.classList.remove("on"); t.textContent = ""; }, 5000);
 }
+let liveT;
+function announce(m) {   // persistent polite live region for state changes that re-render the page
+  let l = document.getElementById("sr-live");
+  if (!l) { l = document.createElement("div"); l.id = "sr-live"; l.className = "sr"; l.setAttribute("role", "status"); l.setAttribute("aria-live", "polite"); document.body.appendChild(l); }
+  l.textContent = ""; clearTimeout(liveT); liveT = setTimeout(() => { l.textContent = m; }, 60);
+}
 function getMine() { try { return JSON.parse(localStorage.getItem("pcfc_my_uploads")) || []; } catch (e) { return []; } }
 function setMine(a) { S.mine = a; try { localStorage.setItem("pcfc_my_uploads", JSON.stringify(a.filter(x => !x.demo))); } catch (e) {} }
 // Photos: WebP (much smaller) with JPG fallback; phones get the 800px versions
@@ -354,8 +360,9 @@ function surveyPage() {
     <h2 style="font-size:clamp(28px,3cqi + 16px,44px)">Thank you for attending</h2>
     <p class="lede">Your honest feedback on the 2026 Pinellas County Fire Conference (${esc(CFG.lastDates)}) shapes next year's conference. It takes about five minutes, and name and department are optional.</p>
     <div class="ectas" style="justify-content:flex-start;margin-top:0">${ext(SURVEY_URL, "Open the survey in full screen ↗", "btn o")}</div>
-    <p class="fine">You can fill it in right here, or open it full screen. Responses go straight to the conference organizers through Microsoft Forms.</p></div></section>
-  <section class="esec" style="padding-top:0"><div class="wrap" style="max-width:820px"><a class="skip-inline" href="#survey-end">Skip the embedded survey</a><div class="sframe">
+    <p class="fine">You can fill it in right here, or open it full screen. Responses go straight to the conference organizers through Microsoft Forms.</p>
+    <div class="sphone"><p class="fine">On a phone, the full-screen survey is easier to scroll and finish.</p><button type="button" class="btn sm alt" id="svshow" data-act="surveyshow" aria-expanded="${!!S.surveyOpen}">${S.surveyOpen ? "Hide the form on this page" : "Fill it in on this page instead"}</button></div></div></section>
+  <section class="esec" style="padding-top:0"><div class="wrap" style="max-width:820px"><a class="skip-inline" href="#survey-end">Skip the embedded survey</a><div class="sframe${S.surveyOpen ? " open" : ""}">
     <iframe src="${SURVEY_EMBED}" title="2026 Pinellas County Fire Conference feedback survey" loading="lazy" allowfullscreen></iframe></div>
     <p class="fine" id="survey-end" tabindex="-1" style="margin-top:10px">Survey not showing? ${ext(SURVEY_URL, "Open it here ↗", "inlink")}</p></div></section>
   <section class="esec" style="padding-top:0"><div class="wrap"><div class="crossband"><div><h3>Done? Share your photos too</h3><p>Add your shots from the 2026 conference to the photo album.</p></div>${go("photos", "Share photos", "btn o")}</div></div></section>
@@ -406,11 +413,11 @@ async function sendContact(form) {
 const A = S.adm;
 A.feat = new Map(); A.lmPage = "home"; A.lmTag = "";
 function admin() {
-  if (!A.user) return `<main class="login"><form class="card" id="loginForm" novalidate>${BADGE.replace('class="badge"', 'class="badge" style="height:84px;margin:0 auto"')}
+  if (!A.user) return `<a class="skip" href="#main">Skip to main content</a><main class="login" id="main" tabindex="-1"><form class="card" id="loginForm" novalidate>${BADGE.replace('class="badge"', 'class="badge" style="height:84px;margin:0 auto"')}
     <h1 style="font-size:28px;text-align:center">Organizer sign-in</h1><p class="fine" style="text-align:center">Sign in with your admin account to manage photos and the ${CFG.nextYear} list.</p>
-    <div class="field"><label for="ae">Email</label><input id="ae" type="email" autocomplete="username" required></div>
-    <div class="field"><label for="ap">Password</label><input id="ap" type="password" autocomplete="current-password" required></div>
-    ${A.loginErr ? `<p class="errbox" role="alert">${esc(A.loginErr)}</p>` : ""}
+    <div class="field"><label for="ae">Email</label><input id="ae" type="email" autocomplete="username" required${A.loginErr ? ' aria-invalid="true" aria-describedby="lerr"' : ""}></div>
+    <div class="field"><label for="ap">Password</label><input id="ap" type="password" autocomplete="current-password" required${A.loginErr ? ' aria-invalid="true" aria-describedby="lerr"' : ""}></div>
+    ${A.loginErr ? `<p class="errbox" id="lerr" role="alert"><span aria-hidden="true">! </span>${esc(A.loginErr)}</p>` : ""}
     <button class="btn" type="submit">Sign in</button>
     ${DEMO ? `<p class="fine">Preview mode: any email and password will work, and the photos are samples.</p>` : ""}
     ${go("home", "← Back to the site", "fine")}</form></main>`;
@@ -425,17 +432,17 @@ function admin() {
       <button type="button" class="btn sm o" data-act="feature" ${n && !A.busy ? "" : "disabled"}>★ Show on site</button>
       <button type="button" class="btn sm alt" data-act="unfeature" ${n && !A.busy ? "" : "disabled"}>Remove from site</button>
       <button type="button" class="btn sm alt" data-act="refresh">↻ Refresh</button>
-      <span class="sp"></span><button type="button" class="btn sm danger" data-act="del" ${n ? "" : "disabled"}>Delete${n ? ` (${n})` : ""}</button></div>
-     ${A.confirm ? `<div class="confirm" role="alertdialog" aria-label="Confirm delete">Delete ${n} photo${n > 1 ? "s" : ""} permanently? This can't be undone.<span style="flex:1"></span><button type="button" class="btn sm alt" data-act="cancel">Keep them</button><button type="button" class="btn sm danger" data-act="reallydel">Delete permanently</button></div>` : ""}
+      <span class="sp"></span><button type="button" class="btn sm danger" id="delbtn" data-act="del" ${n ? "" : "disabled"}>Delete${n ? ` (${n})` : ""}</button></div>
+     ${A.confirm ? `<div class="confirm" role="alertdialog" aria-label="Confirm delete">Delete ${n} photo${n > 1 ? "s" : ""} permanently? This can't be undone.<span style="flex:1"></span><button type="button" class="btn sm alt" id="keepbtn" data-act="cancel">Keep them</button><button type="button" class="btn sm danger" data-act="reallydel">Delete permanently</button></div>` : ""}
      <p class="note">ⓘ Downloading only makes copies on your computer. The originals stay on the site. Only Delete removes photos. ★ Show on site adds the selected photos to the public 2026 Photo Album.</p>
      ${A.err ? `<p class="errbox" role="alert">${esc(A.err)}</p>` : ""}
-     ${A.loading ? `<p class="empty">Loading photos…</p>` : items.length ? `<div class="grid">${items.map((p, i) => `<button type="button" class="tile ${A.sel.has(i) ? "sel" : ""}" data-act="tile" data-i="${i}" aria-pressed="${A.sel.has(i)}" aria-label="${esc(p.name)}"><img src="${esc(p.url)}" alt="" loading="lazy"><span class="tick">✓</span>${A.feat.has(p.path) ? `<span class="star">★ On site</span>` : ""}<span class="meta">${esc(p.name)}</span></button>`).join("")}</div>
-       <p class="fine">Tap a photo to select it. Double-click (or double-tap) to view it full size.</p>` : `<p class="empty">No photos uploaded yet. Check back after the conference kicks off!</p>`}`;
+     ${A.loading ? `<p class="empty">Loading photos…</p>` : items.length ? `<div class="grid">${items.map((p, i) => `<div class="tilewrap"><button type="button" class="tile ${A.sel.has(i) ? "sel" : ""}" id="t${i}" data-act="tile" data-i="${i}" aria-pressed="${A.sel.has(i)}" aria-label="${esc(p.name)}${A.feat.has(p.path) ? ", shown on site" : ""}"><img src="${esc(p.url)}" alt="" loading="lazy"><span class="tick" aria-hidden="true">✓</span>${A.feat.has(p.path) ? `<span class="star" aria-hidden="true">★ On site</span>` : ""}<span class="meta">${esc(p.name)}</span></button><button type="button" class="tilev" id="tv${i}" data-act="tileview" data-i="${i}" aria-label="View ${esc(p.name)} full size"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button></div>`).join("")}</div>
+       <p class="fine">Tap a photo to select it. Use the corner button (or double-click) to view it full size.</p>` : `<p class="empty">No photos uploaded yet. Check back after the conference kicks off!</p>`}`;
   } else if (t === "signups") {
     const rows = A.signups || [], by = {};
     rows.forEach(r => { const x = String(r.src || ""), k = x.includes(" · ") ? x.split(" · ")[0] : "direct"; by[k] = (by[k] || 0) + 1; });
-    body = A.signErr ? `<p class="errbox">${esc(A.signErr)}</p>` : `${rows.length ? `<div class="srcs"><b>Where sign-ups came from</b>${Object.entries(by).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<span class="chip">${esc(k)} <b>${v}</b></span>`).join("")}</div>` : ""}<div class="ahead" style="margin:0"><p class="fine">${rows.length} ${rows.length === 1 ? "person wants" : "people want"} to hear about ${CFG.nextYear}.</p><button type="button" class="btn sm" data-act="csv" ${rows.length ? "" : "disabled"}>⬇ Export CSV</button></div>
-     <div class="tbl"><table><thead><tr><th>Email</th><th>Name</th><th>Department</th><th>Joined</th><th>From</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.email)}</td><td>${esc([r.firstName, r.lastName].filter(Boolean).join(" "))}</td><td>${esc(r.department)}</td><td class="num">${esc(r.when)}</td><td>${esc(r.src)}</td></tr>`).join("") || `<tr><td colspan="5">No sign-ups yet.</td></tr>`}</tbody></table></div>`;
+    body = A.signErr ? `<p class="errbox" role="alert">${esc(A.signErr)}</p>` : `${rows.length ? `<div class="srcs"><b>Where sign-ups came from</b>${Object.entries(by).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<span class="chip">${esc(k)} <b>${v}</b></span>`).join("")}</div>` : ""}<div class="ahead" style="margin:0"><p class="fine">${rows.length} ${rows.length === 1 ? "person wants" : "people want"} to hear about ${CFG.nextYear}.</p><button type="button" class="btn sm" data-act="csv" ${rows.length ? "" : "disabled"}>⬇ Export CSV</button></div>
+     <div class="tbl" tabindex="0" role="region" aria-label="${CFG.nextYear} sign-ups table"><table><caption class="sr">${CFG.nextYear} mailing list sign-ups</caption><thead><tr><th scope="col">Email</th><th scope="col">Name</th><th scope="col">Department</th><th scope="col">Joined</th><th scope="col">From</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.email)}</td><td>${esc([r.firstName, r.lastName].filter(Boolean).join(" "))}</td><td>${esc(r.department)}</td><td class="num">${esc(r.when)}</td><td>${esc(r.src)}</td></tr>`).join("") || `<tr><td colspan="5">No sign-ups yet.</td></tr>`}</tbody></table></div>`;
   } else {
     body = `<div class="switch"><div><b>Photo uploads</b><p class="fine">${S.uploadsOpen ? "On: attendees can upload photos right now." : "Off: the home page says uploads are closed and points visitors to the mailing list."}</p></div><button type="button" role="switch" aria-checked="${S.uploadsOpen}" aria-label="Photo uploads" data-act="toggle"></button></div>
      <div class="obox lm"><h3>Share-link maker</h3><p class="fine">Add a tag to every link you post so the ${CFG.nextYear} sign-ups tab shows which post brought people in. Use a short tag like <b>fb-nov</b>, <b>ig-story</b> or <b>flyer</b>.</p>
@@ -447,13 +454,13 @@ function admin() {
       <a href="${ROOT}qr-2027-list.png" target="_blank" rel="noopener"><img src="${ROOT}qr-2027-list.png" alt="QR code for the ${CFG.nextYear} mailing list" width="140" height="140"><span>${CFG.nextYear} mailing list</span></a>
       <a href="${ROOT}qr-survey.png" target="_blank" rel="noopener"><img src="${ROOT}qr-survey.png" alt="QR code for the 2026 survey" width="140" height="140"><span>2026 survey</span></a></div></div>`;
   }
-  return `<div class="admin"><aside class="side"><a class="brand" href="${URLS.home}" data-go="home">${BADGE}<span>PCFC Admin<small>${esc(A.user.email || "Organizer")}</small></span></a>
+  return `<a class="skip" href="#main">Skip to main content</a><div class="admin"><aside class="side" aria-label="Admin menu"><a class="brand" href="${URLS.home}" data-go="home">${BADGE}<span>PCFC Admin<small>${esc(A.user.email || "Organizer")}</small></span></a>
     <button type="button" data-act="atab" data-t="photos" ${cur("photos")}>Photos <span>${items.length}</span></button>
     <button type="button" data-act="atab" data-t="signups" ${cur("signups")}>${CFG.nextYear} sign-ups <span>${A.signups ? A.signups.length : ""}</span></button>
     <button type="button" data-act="atab" data-t="settings" ${cur("settings")}>Settings</button>
     <span class="grow"></span>${go("home", "View site ↗")}<button type="button" data-act="signout">Sign out</button></aside>
-   <main class="amain"><div class="ahead"><h1>${{ photos: "Photo uploads", signups: CFG.nextYear + " sign-ups", settings: "Settings" }[t]}</h1>${DEMO ? `<span class="sample">Preview · sample data</span>` : ""}</div>${body}</main>
-   ${A.light !== null && items[A.light] ? `<div class="lightbox" data-act="close"><div class="box"><img src="${esc(items[A.light].url)}" alt="${esc(items[A.light].name)}"><div class="row"><span>${esc(items[A.light].name)}</span><span style="display:flex;gap:8px"><a class="btn sm" href="${esc(items[A.light].url)}" target="_blank" rel="noopener">⬇ Download</a><button type="button" class="btn sm alt" style="color:#fff;box-shadow:inset 0 0 0 2px #fff" data-act="close">Close</button></span></div></div></div>` : ""}</div>`;
+   <main class="amain" id="main" tabindex="-1"><div class="ahead"><h1>${{ photos: "Photo uploads", signups: CFG.nextYear + " sign-ups", settings: "Settings" }[t]}</h1>${DEMO ? `<span class="sample">Preview · sample data</span>` : ""}</div>${body}</main>
+   ${A.light !== null && items[A.light] ? `<div class="lightbox" id="lb" data-act="close" role="dialog" aria-modal="true" aria-label="Photo viewer: ${esc(items[A.light].name)}"><div class="box"><img src="${esc(items[A.light].url)}" alt="${esc(items[A.light].name)}"><div class="row"><span>${esc(items[A.light].name)} <span class="fine" style="color:#ddd">(${A.light + 1} of ${items.length})</span></span><span style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn sm alt lbx" id="lbprev" data-act="adnav" data-d="-1" aria-label="Previous photo">←</button><button type="button" class="btn sm alt lbx" id="lbnext" data-act="adnav" data-d="1" aria-label="Next photo">→</button><a class="btn sm" href="${esc(items[A.light].url)}" target="_blank" rel="noopener">⬇ Download<span class="sr"> (opens in a new tab)</span></a><button type="button" class="btn sm alt lbx" id="lbclose" data-act="close">Close</button></span></div></div></div>` : ""}</div>`;
 }
 function lmLink() {
   const t = cleanTag(A.lmTag);
@@ -551,23 +558,44 @@ function csv() {
 
 /* ───────────── Render & events ───────────── */
 let slideT;
+function focusKey(el) {
+  if (!el || !app.contains(el) || el === document.body) return "";
+  if (el.id) return "#" + CSS.escape(el.id);
+  const d = el.dataset || {}; if (!d.act) return "";
+  const q = v => String(v).replace(/["\\]/g, "\\$&");
+  return `[data-act="${q(d.act)}"]` + ["i", "t", "path", "d", "k"].filter(k => d[k] != null).map(k => `[data-${k}="${q(d[k])}"]`).join("");
+}
 function render() {
-  const y = window.scrollY, keep = {}, focusId = document.activeElement && app.contains(document.activeElement) ? document.activeElement.id : "";
+  const y = window.scrollY, keep = {}, focusSel = focusKey(document.activeElement);
   app.querySelectorAll("input[id],textarea[id],select[id]").forEach(el => { if (el.type !== "file" && el.type !== "checkbox" && el.id !== "lmt") keep[el.id] = el.value; });
   app.innerHTML = ({ home, "2027": p2027, photos: photosPage, album: albumPage, contact: contactPage, survey: surveyPage, admin })[S.page]();
   for (const id in keep) { const el = document.getElementById(id); if (el && el.tagName !== "SELECT" && !el.value) el.value = keep[id]; }
-  if (focusId) { const f = document.getElementById(focusId); if (f) f.focus({ preventScroll: true }); }
-  if (S.page === "album" && S.light !== null) {       // dialog: move focus inside it
+  if (focusSel) { let f = null; try { f = app.querySelector(focusSel); } catch (e) {} if (f) f.focus({ preventScroll: true }); }
+  if ((S.page === "album" && S.light !== null) || (S.page === "admin" && A.light !== null)) {       // dialog: move focus inside it
     const lb = document.getElementById("lb");
     if (lb && !lb.contains(document.activeElement)) { const c = document.getElementById("lbclose"); if (c) c.focus({ preventScroll: true }); }
   }
   if (S.focusAfter) { const f = document.getElementById(S.focusAfter); S.focusAfter = ""; if (f) f.focus({ preventScroll: false }); }
   window.scrollTo(0, y);
+  stickyCta();
   clearInterval(slideT);
   if (S.page === "2027" && !matchMedia("(prefers-reduced-motion: reduce)").matches)
     slideT = setInterval(() => { if (S.paused) return; S.slide = (S.slide + 1) % SLIDES.length;
       document.querySelectorAll(".slide").forEach((s, i) => { s.classList.toggle("on", i === S.slide); s.setAttribute("aria-hidden", i !== S.slide); });
       document.querySelectorAll(".dots button").forEach((b, i) => b.setAttribute("aria-current", String(i === S.slide))); }, 4500);
+}
+let ctaIO;
+function stickyCta() {
+  if (ctaIO) { ctaIO.disconnect(); ctaIO = null; }
+  const show = ["home", "2027", "album"].includes(S.page) && !S.notified && !S.light;
+  app.classList.toggle("has-cta", show);
+  if (!show) return;
+  app.insertAdjacentHTML("beforeend", `<div class="stickycta" id="stickycta">${go("2027", "Get " + CFG.nextYear + " updates", "btn", "list")}</div>`);
+  const bar = document.getElementById("stickycta"), targets = [document.getElementById("list"), app.querySelector(".ehero .ectas")].filter(Boolean);
+  if (!targets.length || !("IntersectionObserver" in window)) return;
+  const seen = new Set();   // hide the bar while the form or the hero button is already on screen
+  ctaIO = new IntersectionObserver(es => { es.forEach(en => en.isIntersecting ? seen.add(en.target) : seen.delete(en.target)); bar.classList.toggle("hide", seen.size > 0); }, { threshold: 0.15 });
+  targets.forEach(t => ctaIO.observe(t));
 }
 function navigate(page, hash) {
   S.dd = null; S.menu = false;
@@ -595,18 +623,21 @@ app.addEventListener("click", e => {
     case "delmine": deleteMine(d.path); break;
     case "slide": S.slide = +d.i; render(); break;
     case "slidepause": S.paused = !S.paused; render(); break;
+    case "surveyshow": S.surveyOpen = !S.surveyOpen; render(); break;
     case "copy": { const u = SITE + (PUBLIC[S.page] || "/");
       (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(() => toast("Link copied"), () => toast(u)); break; }
-    case "atab": A.tab = d.t; A.confirm = false; render(); if (d.t === "signups" && !A.signups) loadSignups(); break;
-    case "tile": { const i = +d.i; if (e.detail === 2) { A.light = i; A.sel.delete(i); } else { A.sel.has(i) ? A.sel.delete(i) : A.sel.add(i); } A.confirm = false; render(); break; }
+    case "atab": A.tab = d.t; A.confirm = false; announce({ photos: "Photo uploads", signups: CFG.nextYear + " sign-ups", settings: "Settings" }[d.t] + " page"); render(); if (d.t === "signups" && !A.signups) loadSignups(); break;
+    case "tile": { const i = +d.i; if (e.detail === 2) { A.light = i; A.lbFrom = "tv" + i; A.sel.delete(i); } else { A.sel.has(i) ? A.sel.delete(i) : A.sel.add(i); } A.confirm = false; render(); announce(`${A.sel.size} of ${A.items.length} selected`); break; }
+    case "tileview": A.light = +d.i; A.lbFrom = a.id; render(); break;
+    case "adnav": { const n = A.items.length; A.light = (A.light + (+d.d) + n) % n; render(); break; }
     case "selall": if (A.sel.size === A.items.length) A.sel.clear(); else A.items.forEach((_, i) => A.sel.add(i)); render(); break;
     case "zipall": zip(A.items.map((_, i) => i), "all"); break;
     case "zipsel": zip([...A.sel], "sel"); break;
     case "refresh": loadPhotos(); break;
-    case "del": A.confirm = true; render(); break;
-    case "cancel": A.confirm = false; render(); break;
+    case "del": A.confirm = true; S.focusAfter = "keepbtn"; render(); break;
+    case "cancel": A.confirm = false; S.focusAfter = "delbtn"; render(); break;
     case "reallydel": deleteSelected(); break;
-    case "close": { const back = S.lbFrom; A.light = null; S.light = null; render(); if (back) { const f = document.getElementById(back); if (f) f.focus(); } break; }
+    case "close": { const back = A.light !== null ? A.lbFrom : S.lbFrom; A.light = null; S.light = null; render(); if (back) { const f = document.getElementById(back); if (f) f.focus(); } break; }
     case "feature": setFeatured(true); break;
     case "unfeature": setFeatured(false); break;
     case "newmsg": S.sent = false; render(); break;
@@ -625,8 +656,9 @@ app.addEventListener("click", e => {
 });
 app.addEventListener("keydown", e => {
   if (e.key === "Escape" && S.menu && !S.light && A.light === null) { S.menu = false; S.dd = null; render(); const h = document.getElementById("hamb"); if (h) h.focus(); return; }
-  if (e.key === "Escape" && (S.dd || A.light !== null || S.light !== null)) { const back = S.light !== null ? S.lbFrom : ""; S.dd = null; A.light = null; S.light = null; render(); if (back) { const f = document.getElementById(back); if (f) f.focus(); } return; }
-  if (e.key === "Tab" && S.light !== null) {
+  if (e.key === "Escape" && (S.dd || A.light !== null || S.light !== null)) { const back = S.light !== null ? S.lbFrom : A.light !== null ? A.lbFrom : ""; S.dd = null; A.light = null; S.light = null; render(); if (back) { const f = document.getElementById(back); if (f) f.focus(); } return; }
+  if (A.light !== null && (e.key === "ArrowRight" || e.key === "ArrowLeft")) { const n = A.items.length; A.light = (A.light + (e.key === "ArrowRight" ? 1 : -1) + n) % n; render(); return; }
+  if (e.key === "Tab" && (S.light !== null || A.light !== null)) {
     const lb = document.getElementById("lb"); const f = lb ? [...lb.querySelectorAll("button")] : [];
     if (f.length) { const first = f[0], last = f[f.length - 1];
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -649,11 +681,11 @@ app.addEventListener("submit", async e => {
   if (e.target.id === "contactForm") sendContact(e.target);
   if (e.target.id === "loginForm") {
     const email = e.target.querySelector("#ae").value.trim(), pw = e.target.querySelector("#ap").value;
-    if (!email || !pw) { A.loginErr = "Enter your email and password."; render(); return; }
+    if (!email || !pw) { A.loginErr = "Enter your email and password."; S.focusAfter = email ? "ap" : "ae"; render(); return; }
     A.loginErr = "";
     if (DEMO) { A.user = { email }; render(); loadPhotos(); loadSignups(); return; }
     try { await fb.auth().signInWithEmailAndPassword(email, pw); }
-    catch (err) { A.loginErr = "Sign-in failed. Check your email and password and try again."; render(); }
+    catch (err) { A.loginErr = "Sign-in failed. Check your email and password and try again."; S.focusAfter = "ap"; render(); }
   }
 });
 
