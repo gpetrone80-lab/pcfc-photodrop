@@ -75,9 +75,12 @@ const S = {
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 let toastT;
 function toast(m) {
+  // UX: one persistent polite live region, created up front so screen readers announce every message; shown 5s
   let t = document.querySelector(".toast");
-  if (!t) { t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); document.body.appendChild(t); }
-  t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2800);
+  if (!t) { t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); t.setAttribute("aria-live", "polite"); document.body.appendChild(t); }
+  t.textContent = ""; clearTimeout(toastT);
+  setTimeout(() => { t.textContent = m; t.classList.add("on"); }, 30);
+  toastT = setTimeout(() => { t.classList.remove("on"); t.textContent = ""; }, 5000);
 }
 function getMine() { try { return JSON.parse(localStorage.getItem("pcfc_my_uploads")) || []; } catch (e) { return []; } }
 function setMine(a) { S.mine = a; try { localStorage.setItem("pcfc_my_uploads", JSON.stringify(a.filter(x => !x.demo))); } catch (e) {} }
@@ -96,8 +99,8 @@ const I = {
   ig: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor"/></svg>',
   link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>'
 };
-const BADGE = `<img class="badge" src="${IMG}badge-conference.webp" width="150" height="200" alt="Pinellas County Fire Conference badge">`;
-const ext = (href, label, cls) => `<a class="${cls || ""}" href="${href}" target="_blank" rel="noopener">${label}</a>`;
+const BADGE = `<img class="badge" src="${IMG}badge-conference.webp" width="150" height="200" alt="">`;
+const ext = (href, label, cls) => `<a class="${cls || ""}" href="${href}" target="_blank" rel="noopener">${label}<span class="sr"> (opens in a new tab)</span></a>`;
 const go = (page, label, cls, hash) => `<a class="${cls || ""}" href="${URLS[page]}${hash ? "#" + hash : ""}" data-go="${page}"${hash ? ` data-hash="${hash}"` : ""}>${label}</a>`;
 
 /* ───────────── Header / footer ───────────── */
@@ -105,12 +108,12 @@ function nav() {
   const L = [["home", "Home"], ["2027", CFG.nextYear + " Conference"], ["photos", "Share Photos"], ["album", "2026 Photo Album"]].concat(CFG.surveyId ? [["survey", "Survey"]] : [], [["contact", "Contact"]]);
   const link = ([p, l]) => `<a href="${URLS[p]}" data-go="${p}" class="plain"${S.page === p ? ' aria-current="page"' : ""}>${l}</a>`;
   const social = ext(CFG.facebook, "Facebook ↗") + ext(CFG.instagram, "Instagram ↗");
-  return `<header class="enav"><div class="wrap">
+  return `<a class="skip" href="#main">Skip to main content</a><header class="enav"><div class="wrap">
     <a class="ebrand" href="${URLS.home}" data-go="home">${BADGE}<span class="eword">Pinellas County<b>Fire Conference</b></span></a>
     <div class="emeta"><span>${I.cal} ${CFG.nextYear} · ${esc(CFG.nextDates)}</span><span>${I.pin} ${esc(CFG.location)}</span></div>
     <nav class="emenu" aria-label="Main">${L.map(link).join("")}<div class="dd"><button type="button" data-act="dd" data-k="fol" aria-expanded="${S.dd === "fol"}">Follow us${I.chev}</button>${S.dd === "fol" ? `<div class="ddm">${social}</div>` : ""}</div></nav>
-    <button type="button" class="eham" data-act="menu" aria-expanded="${S.menu}">${S.menu ? "Close" : "Menu"}</button></div>
-    ${S.menu ? `<nav class="esheet" aria-label="Menu"><small>Pages</small>${L.map(link).join("")}<small>Follow us</small>${social}</nav>` : ""}</header>`;
+    <button type="button" class="eham" id="hamb" data-act="menu" aria-expanded="${S.menu}" aria-controls="menusheet">${S.menu ? "Close" : "Menu"}</button></div>
+    ${S.menu ? `<nav class="esheet" id="menusheet" aria-label="Menu"><small>Pages</small>${L.map(link).join("")}<small>Follow us</small>${social}</nav>` : ""}</header>`;
 }
 function crumb(here, title) {
   return `<div class="wrap crumb"><small>${go("home", "Home")} ▸ <span>${here}</span></small><h1 class="ptitle">${I.flame}${title}</h1></div>`;
@@ -222,20 +225,20 @@ async function deleteMine(path) {
 
 /* ───────────── Mailing list ───────────── */
 function listForm(src) {
-  if (S.notified) return `<div class="eok"><div class="success" role="status">You're on the list. See you in ${CFG.nextYear}!</div>
+  if (S.notified) return `<div class="eok"><div class="success" id="listok" tabindex="-1" role="status">You're on the list. See you in ${CFG.nextYear}!</div>
     <p>We'll email <b>${esc(S.email)}</b> about 6 months before the event, and whenever the dates, host, classes and speakers are announced.</p>
     <p class="fine">Help us fill the room: share this page with your crew.</p>
     <div class="sharebar"><button type="button" class="btn sm alt" data-act="copy">${I.link} Copy link</button>${ext("https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent("https://pinellascountyfireconference.com/2027/"), I.fb + " Share", "btn sm alt")}</div></div>`;
   return `<form id="notifyForm" class="eform" data-src="${src}" novalidate>
     <div class="field"><label for="fn">First name</label><input id="fn" autocomplete="given-name"></div>
     <div class="field"><label for="ln">Last name</label><input id="ln" autocomplete="family-name"></div>
-    <div class="field full"><label for="em">Email (required)</label><input id="em" type="email" autocomplete="email" inputmode="email" placeholder="you@department.gov" value="${esc(S.email)}" required></div>
+    <div class="field full"><label for="em">Email (required)</label><input id="em" type="email" autocomplete="email" inputmode="email" placeholder="you@department.gov" value="${esc(S.email)}" required aria-describedby="${S.notifyErr ? "nerr " : ""}nhint"${S.notifyErr ? ' aria-invalid="true"' : ""}></div>
     <div class="field"><label for="dept">Department / agency</label><input id="dept" autocomplete="organization" placeholder="Your department"></div>
     <div class="field"><label for="jt">Rank / job title</label><input id="jt" autocomplete="organization-title" placeholder="Firefighter/EMT"></div>
     <input type="text" id="hp" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
-    ${S.notifyErr ? `<p class="errbox full" role="alert">${esc(S.notifyErr)}</p>` : ""}
+    ${S.notifyErr ? `<p class="errbox full" id="nerr" role="alert" tabindex="-1"><span aria-hidden="true">! </span>${esc(S.notifyErr)}</p>` : ""}
     <button class="btn full" type="submit" ${S.saving ? "disabled" : ""}>${S.saving ? "Saving…" : "Join the mailing list"}</button>
-    <p class="fine full">Only email is required. We only email about the conference. No spam, ever.</p></form>`;
+    <p class="fine full" id="nhint">Only email is required. We only email about the conference. No spam, ever.</p></form>`;
 }
 function listSection(src) {
   return `<section class="esec esec-light" id="list"><div class="wrap"><h2 class="ecenter">Want to attend the ${CFG.nextYear} conference?</h2>
@@ -261,8 +264,8 @@ async function subscribe(form) {
           message: `A new attendee signed up for ${CFG.nextYear} conference notifications: ${email}`, source: SRC || "direct" }, extra))
       }).catch(() => {});
     }
-    S.notified = true;
-  } catch (e) { S.notifyErr = "Couldn't save your email just now. Please try again in a moment."; }
+    S.notified = true; S.focusAfter = "listok";
+  } catch (e) { S.notifyErr = "Couldn't save your email just now. Please try again in a moment."; S.focusAfter = "nerr"; }
   S.saving = false; render();
 }
 
@@ -271,12 +274,13 @@ const SLIDES = [["live-fire", "Live fire behind the crews · Fireground24 Photog
   ["instructors", "The 2026 instructor cadre · Fireground24 Photography"], ["crew", "Crews at the training ground"],
   ["color-guard", "Color guard at the opening ceremony"], ["burn-room", "Inside the burn room"]];
 function slides() {
-  return `<div class="slides wide" aria-roledescription="carousel" aria-label="Scenes from the 2026 conference">${SLIDES.map((s, i) =>
+  return `<div class="slides wide" role="region" aria-roledescription="carousel" aria-label="Scenes from the 2026 conference">${SLIDES.map((s, i) =>
     `<figure class="slide ${i === S.slide ? "on" : ""}" style="${bg(s[0])};background-size:cover;background-position:center;margin:0" aria-hidden="${i !== S.slide}"><figcaption>${esc(s[1])}</figcaption></figure>`).join("")}
-   <div class="dots">${SLIDES.map((s, i) => `<button type="button" data-act="slide" data-i="${i}" aria-label="Show photo ${i + 1}" ${i === S.slide ? 'aria-current="true"' : ""}></button>`).join("")}</div></div>`;
+   <div class="slidebar"><button type="button" id="slidectl" class="pausebtn" data-act="slidepause" aria-pressed="${!!S.paused}" aria-label="${S.paused ? "Play" : "Pause"} automatic slideshow">${S.paused ? "&#9654;" : "&#10074;&#10074;"}</button><div class="dots">${SLIDES.map((s, i) => `<button type="button" id="dot${i}" data-act="slide" data-i="${i}" aria-label="Show photo ${i + 1} of ${SLIDES.length}" aria-current="${i === S.slide}"></button>`).join("")}</div></div></div>`;
 }
-function hero(img, h, p, ctas) {
-  return `<section class="ehero" style="${bg(img)}"><span class="credit">Photo: Fireground24 Photography</span><div class="wrap"><h2>${h}</h2><p>${p}</p><div class="ectas">${ctas}</div></div></section>`;
+function hero(img, h, p, ctas, tag) {
+  tag = tag || "h2";
+  return `<section class="ehero" style="${bg(img)}"><span class="credit">Photo: Fireground24 Photography</span><div class="wrap"><${tag}>${h}</${tag}><p>${p}</p><div class="ectas">${ctas}</div></div></section>`;
 }
 const ALBUM_PHOTOS = [["live-fire", "Live fire behind the crews · Fireground24 Photography"], ["two-man-can", "2 Man & A Can · Fireground24 Photography"],
   ["instructors", "The 2026 instructor cadre · Fireground24 Photography"], ["crew", "Crews at the training ground"], ["color-guard", "Color guard at the opening ceremony"],
@@ -298,9 +302,10 @@ function schedule() {
 }
 function home() {
   const door = (p, img, h, t, cta) => `<a class="door" href="${URLS[p]}" data-go="${p}" style="${bg(img)}"><span><b>${h}</b><small>${t}</small><em>${cta} →</em></span></a>`;
-  return `${nav()}<main>
+  return `${nav()}<main id="main" tabindex="-1">
   ${hero("live-fire", "Train with the Pinellas County fire family", `Speaker day and live fire HOT days, run by local training chiefs and instructors. The ${CFG.nextYear} conference is being planned now.`,
-     go("2027", `Get ${CFG.nextYear} updates`, "btn", "list") + go("photos", "Share your 2026 photos", "btn w"))}
+     go("2027", `Get ${CFG.nextYear} updates`, "btn", "list") + go("photos", "Share your 2026 photos", "btn w"), "h1")}
+  <section class="facts" aria-label="Conference at a glance"><div class="wrap"><dl><div><dt>${I.cal} When</dt><dd>${CFG.nextYear} · ${esc(CFG.nextDates)}</dd></div><div><dt>${I.pin} Where</dt><dd>${esc(CFG.location)}</dd></div><div><dt>${I.flame} Format</dt><dd>Speaker day + live fire HOT days</dd></div></dl></div></section>
   ${CFG.surveyId ? `<section class="sband"><div class="wrap"><p><b>Were you at the 2026 conference?</b> Tell us what to keep and what to change. The survey takes about 5 minutes.</p>${go("survey", "Take the survey", "btn o")}</div></section>` : ""}
   <section class="esec"><div class="wrap"><h2 class="ecenter">Start here</h2>
    <div class="doors">${door("2027", "instructors", CFG.nextYear + " Conference", "Dates, host, classes and the mailing list", "See what's next")}${door("photos", "two-man-can", "Share Photos", "Were you there in 2026? Upload your shots", "Upload photos")}${door("album", "crew", "2026 Photo Album", "Scenes from the training ground", "Browse photos")}</div></div></section>
@@ -311,7 +316,7 @@ function home() {
 }
 function p2027() {
   const steps = [["Now", [["w", "Join the mailing list"]]], ["~6 months out", [["r", "Host & dates announced"], ["r", "Classes & speakers posted"]]], ["Conference", [["o", "Registration opens"], ["r", "Speaker day + live fire HOT days"]]]];
-  return `${nav()}<main>${crumb(CFG.nextYear + " Conference", CFG.nextYear + " Conference")}
+  return `${nav()}<main id="main" tabindex="-1">${crumb(CFG.nextYear + " Conference", CFG.nextYear + " Conference")}
   ${hero("instructors", `See you in ${CFG.nextYear}`, "The instructors are already planning. Join the list to hear the dates, host, classes and speakers first.", go("2027", "Notify me", "btn", "list"))}
   <section class="esec"><div class="wrap"><h2 class="ecenter">The conference returns in ${CFG.nextYear}</h2>
    <div class="eboxes"><div class="obox"><h3>What we know so far</h3><dl><dt>Where</dt><dd>${esc(CFG.location)}</dd><dt>Format</dt><dd>Speaker day + live fire HOT days</dd><dt>Dates</dt><dd>${CFG.nextDates === "Dates TBA" ? "To be announced, about 6 months before the event" : esc(CFG.nextDates)}</dd><dt>Host</dt><dd>To be announced</dd></dl><p>Join the list and you'll get an email at each announcement.</p></div>${quickLinks()}</div></div></section>
@@ -323,7 +328,7 @@ function p2027() {
 }
 function photosPage() {
   const statusPill = S.uploadsOpen ? `<span class="statuspill"><i></i>Photo uploads open</span>` : `<span class="statuspill closed"><i></i>Uploads closed for now</span>`;
-  return `${nav()}<main>${crumb("Share Photos", "Share your photos")}
+  return `${nav()}<main id="main" tabindex="-1">${crumb("Share Photos", "Share your photos")}
   <section class="esec" id="photos"><div class="wrap hero-grid"><div class="stack">
     <h2 style="font-size:clamp(28px,3cqi + 16px,44px)">Share the fire</h2>
     <p class="lede">Were you at the 2026 conference? Upload your photos. No account, no sign-in. The best shots get featured on our Facebook and Instagram.</p><div>${statusPill}</div>
@@ -333,43 +338,43 @@ function photosPage() {
 }
 function albumPage() {
   const list = albumList(), L = S.light !== null ? list[S.light] : null, nf = S.featured.length;
-  const tile = (p, i) => `<button type="button" class="aph" data-act="aopen" data-i="${i}" aria-label="${esc(p.cap)}"><img src="${esc(p.src)}" alt="${esc(p.cap)}" loading="lazy" onerror="this.parentNode.hidden=true"></button>`;
-  return `${nav()}<main>${crumb("2026 Photo Album", "2026 photo album")}
+  const tile = (p, i) => `<button type="button" class="aph" id="ph${i}" data-act="aopen" data-i="${i}" aria-label="${esc(p.cap)}"><img src="${esc(p.src)}" alt="${esc(p.cap)}" loading="lazy" onerror="this.parentNode.hidden=true"></button>`;
+  return `${nav()}<main id="main" tabindex="-1">${crumb("2026 Photo Album", "2026 photo album")}
   ${nf ? `<section class="esec"><div class="wrap"><h2 class="ecenter">Shared by attendees</h2><p class="fine">Photos people uploaded on Share Photos, picked by the organizers.</p>
    <div class="agrid">${list.slice(0, nf).map(tile).join("")}</div><div class="ectas">${go("photos", "Add your photos", "btn")}</div></div></section>` : ""}
   <section class="esec"${nf ? ' style="padding-top:0"' : ""}><div class="wrap"><h2 class="ecenter">Scenes from the 2026 conference</h2><p class="fine">A selection from the 2026 album. Tap a photo to see it larger.</p>
    <div class="agrid">${list.slice(nf).map((p, i) => tile(p, i + nf)).join("")}</div>
    <div class="ectas">${ext(CFG.albumUrl, "Open the full album on Google Photos ↗", "btn o")}${go("photos", "Add your photos", "btn w")}</div></div></section>
   </main>${footer()}
-  ${L ? `<div class="lightbox" data-act="close" role="dialog" aria-label="${esc(L.cap)}"><div class="box"><img src="${esc(L.full)}" alt="${esc(L.cap)}"><div class="row"><span>${esc(L.cap)}</span><span style="display:flex;gap:8px"><button type="button" class="btn sm alt lbx" data-act="anav" data-d="-1" aria-label="Previous photo">←</button><button type="button" class="btn sm alt lbx" data-act="anav" data-d="1" aria-label="Next photo">→</button><button type="button" class="btn sm alt lbx" data-act="close">Close</button></span></div></div></div>` : ""}`;
+  ${L ? `<div class="lightbox" id="lb" data-act="close" role="dialog" aria-modal="true" aria-label="Photo viewer: ${esc(L.cap)}"><div class="box"><img src="${esc(L.full)}" alt="${esc(L.cap)}"><div class="row"><span>${esc(L.cap)}</span><span style="display:flex;gap:8px"><button type="button" class="btn sm alt lbx" id="lbprev" data-act="anav" data-d="-1" aria-label="Previous photo">←</button><button type="button" class="btn sm alt lbx" id="lbnext" data-act="anav" data-d="1" aria-label="Next photo">→</button><button type="button" class="btn sm alt lbx" id="lbclose" data-act="close">Close</button></span></div></div></div>` : ""}`;
 }
 function surveyPage() {
-  return `${nav()}<main>${crumb("2026 Survey", "2026 feedback survey")}
+  return `${nav()}<main id="main" tabindex="-1">${crumb("2026 Survey", "2026 feedback survey")}
   <section class="esec" style="padding-bottom:16px"><div class="wrap stack" style="max-width:820px">
     <h2 style="font-size:clamp(28px,3cqi + 16px,44px)">Thank you for attending</h2>
     <p class="lede">Your honest feedback on the 2026 Pinellas County Fire Conference (${esc(CFG.lastDates)}) shapes next year's conference. It takes about five minutes, and name and department are optional.</p>
     <div class="ectas" style="justify-content:flex-start;margin-top:0">${ext(SURVEY_URL, "Open the survey in full screen ↗", "btn o")}</div>
     <p class="fine">You can fill it in right here, or open it full screen. Responses go straight to the conference organizers through Microsoft Forms.</p></div></section>
-  <section class="esec" style="padding-top:0"><div class="wrap" style="max-width:820px"><div class="sframe">
+  <section class="esec" style="padding-top:0"><div class="wrap" style="max-width:820px"><a class="skip-inline" href="#survey-end">Skip the embedded survey</a><div class="sframe">
     <iframe src="${SURVEY_EMBED}" title="2026 Pinellas County Fire Conference feedback survey" loading="lazy" allowfullscreen></iframe></div>
-    <p class="fine" style="margin-top:10px">Survey not showing? ${ext(SURVEY_URL, "Open it here ↗", "inlink")}</p></div></section>
+    <p class="fine" id="survey-end" tabindex="-1" style="margin-top:10px">Survey not showing? ${ext(SURVEY_URL, "Open it here ↗", "inlink")}</p></div></section>
   <section class="esec" style="padding-top:0"><div class="wrap"><div class="crossband"><div><h3>Done? Share your photos too</h3><p>Add your shots from the 2026 conference to the photo album.</p></div>${go("photos", "Share photos", "btn o")}</div></div></section>
   </main>${footer()}`;
 }
 const TOPICS = [["general", "General question"], ["classes", "Classes & training"], ["vendor", "Vendors & sponsors"], ["photo", "Photo takedown request"], ["media", "Media"]];
 function contactPage() {
   const form = S.sent
-    ? `<div class="card stack"><div class="success" role="status">Thanks! Your message was sent. We'll reply to ${esc(S.cEmail)}.</div><button type="button" class="btn alt" data-act="newmsg">Send another message</button></div>`
+    ? `<div class="card stack"><div class="success" id="msgok" tabindex="-1" role="status">Thanks! Your message was sent. We'll reply to ${esc(S.cEmail)}.</div><button type="button" class="btn alt" data-act="newmsg">Send another message</button></div>`
     : `<form id="contactForm" class="card stack" novalidate>
    <div class="field"><label for="cn">Your name</label><input id="cn" autocomplete="name"></div>
-   <div class="field"><label for="ce">Your email (required)</label><input id="ce" type="email" autocomplete="email" inputmode="email" required></div>
+   <div class="field"><label for="ce">Your email (required)</label><input id="ce" type="email" autocomplete="email" inputmode="email" required${S.cErrField === "ce" ? ' aria-invalid="true" aria-describedby="cerr"' : ""}></div>
    <div class="field"><label for="ct">Topic</label><select id="ct">${TOPICS.map(([v, l]) => `<option value="${v}"${S.topic === v ? " selected" : ""}>${l}</option>`).join("")}</select></div>
-   <div class="field"><label for="cm">Message (required)</label><textarea id="cm" rows="6" required></textarea></div>
+   <div class="field"><label for="cm">Message (required)</label><textarea id="cm" rows="6" required${S.cErrField === "cm" ? ' aria-invalid="true" aria-describedby="cerr"' : ""}></textarea></div>
    <input type="text" id="chp" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
-   ${S.cErr ? `<p class="errbox" role="alert">${esc(S.cErr)}</p>` : ""}
+   ${S.cErr ? `<p class="errbox" id="cerr" role="alert"><span aria-hidden="true">! </span>${esc(S.cErr)}</p>` : ""}
    <button class="btn" type="submit" ${S.sending ? "disabled" : ""}>${S.sending ? "Sending…" : "Send message"}</button>
    <p class="fine">Messages go to the conference organizers. We never share your email.</p></form>`;
-  return `${nav()}<main>${crumb("Contact", "Contact us")}
+  return `${nav()}<main id="main" tabindex="-1">${crumb("Contact", "Contact us")}
   <section class="esec"><div class="wrap hero-grid"><div class="stack">
     <h2 style="font-size:clamp(28px,3cqi + 16px,44px)">Get in touch</h2>
     <p class="lede">Questions about the conference, classes, vendors or sponsorship? Want a photo taken down? Send a message and an organizer will get back to you.</p>
@@ -381,8 +386,9 @@ async function sendContact(form) {
   const v = id => (form.querySelector("#" + id) || {}).value || "";
   if (v("chp")) { S.sent = true; render(); return; }                  // honeypot
   const email = v("ce").trim(), msg = v("cm").trim(), topic = (TOPICS.find(t => t[0] === v("ct")) || TOPICS[0])[1];
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { S.cErr = "Enter your email address so we can reply."; render(); return; }
-  if (msg.length < 5) { S.cErr = "Write a short message."; render(); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { S.cErr = "Enter an email address like name@department.gov so we can reply."; S.cErrField = "ce"; S.focusAfter = "ce"; render(); return; }
+  if (msg.length < 5) { S.cErr = "Write a short message so we know how to help."; S.cErrField = "cm"; S.focusAfter = "cm"; render(); return; }
+  S.cErrField = "";
   S.cErr = ""; S.sending = true; S.cEmail = email; S.topic = v("ct"); render();
   try {
     if (!PREVIEW) {
@@ -391,7 +397,7 @@ async function sendContact(form) {
       const j = await r.json().catch(() => ({}));
       if (!r.ok || String(j.success) === "false") throw new Error("send failed");
     }
-    S.sent = true;
+    S.sent = true; S.focusAfter = "msgok";
   } catch (e) { S.cErr = `Your message didn't go through. Please email us at ${CFG.contactEmail} instead.`; }
   S.sending = false; render();
 }
@@ -551,12 +557,17 @@ function render() {
   app.innerHTML = ({ home, "2027": p2027, photos: photosPage, album: albumPage, contact: contactPage, survey: surveyPage, admin })[S.page]();
   for (const id in keep) { const el = document.getElementById(id); if (el && el.tagName !== "SELECT" && !el.value) el.value = keep[id]; }
   if (focusId) { const f = document.getElementById(focusId); if (f) f.focus({ preventScroll: true }); }
+  if (S.page === "album" && S.light !== null) {       // dialog: move focus inside it
+    const lb = document.getElementById("lb");
+    if (lb && !lb.contains(document.activeElement)) { const c = document.getElementById("lbclose"); if (c) c.focus({ preventScroll: true }); }
+  }
+  if (S.focusAfter) { const f = document.getElementById(S.focusAfter); S.focusAfter = ""; if (f) f.focus({ preventScroll: false }); }
   window.scrollTo(0, y);
   clearInterval(slideT);
   if (S.page === "2027" && !matchMedia("(prefers-reduced-motion: reduce)").matches)
-    slideT = setInterval(() => { S.slide = (S.slide + 1) % SLIDES.length;
+    slideT = setInterval(() => { if (S.paused) return; S.slide = (S.slide + 1) % SLIDES.length;
       document.querySelectorAll(".slide").forEach((s, i) => { s.classList.toggle("on", i === S.slide); s.setAttribute("aria-hidden", i !== S.slide); });
-      document.querySelectorAll(".dots button").forEach((b, i) => b.toggleAttribute("aria-current", i === S.slide)); }, 4500);
+      document.querySelectorAll(".dots button").forEach((b, i) => b.setAttribute("aria-current", String(i === S.slide))); }, 4500);
 }
 function navigate(page, hash) {
   S.dd = null; S.menu = false;
@@ -565,7 +576,7 @@ function navigate(page, hash) {
   S.page = page; app.dataset.page = page; render(); if (page === "admin" && A.user && !A.items.length) loadPhotos();
   hash ? scrollToId(hash) : window.scrollTo(0, 0);
 }
-function scrollToId(id) { if (!id) return; const el = document.getElementById(id); if (!el) return; if (el.tagName === "DETAILS") el.open = true; el.scrollIntoView({ behavior: "smooth", block: "start" }); }
+function scrollToId(id) { if (!id) return; const el = document.getElementById(id); if (!el) return; if (el.tagName === "DETAILS") el.open = true; el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); }
 
 app.addEventListener("click", e => {
   if (S.dd && !e.target.closest(".dd")) { S.dd = null; if (!e.target.closest("[data-act],[data-go]")) { render(); return; } }
@@ -583,6 +594,7 @@ app.addEventListener("click", e => {
     case "keepmine": S.confirmMine = null; render(); break;
     case "delmine": deleteMine(d.path); break;
     case "slide": S.slide = +d.i; render(); break;
+    case "slidepause": S.paused = !S.paused; render(); break;
     case "copy": { const u = SITE + (PUBLIC[S.page] || "/");
       (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(() => toast("Link copied"), () => toast(u)); break; }
     case "atab": A.tab = d.t; A.confirm = false; render(); if (d.t === "signups" && !A.signups) loadSignups(); break;
@@ -594,13 +606,13 @@ app.addEventListener("click", e => {
     case "del": A.confirm = true; render(); break;
     case "cancel": A.confirm = false; render(); break;
     case "reallydel": deleteSelected(); break;
-    case "close": A.light = null; S.light = null; render(); break;
+    case "close": { const back = S.lbFrom; A.light = null; S.light = null; render(); if (back) { const f = document.getElementById(back); if (f) f.focus(); } break; }
     case "feature": setFeatured(true); break;
     case "unfeature": setFeatured(false); break;
     case "newmsg": S.sent = false; render(); break;
     case "copyemail": (navigator.clipboard ? navigator.clipboard.writeText(CFG.contactEmail) : Promise.reject()).then(() => toast("Email address copied"), () => toast(CFG.contactEmail)); break;
     case "lmcopy": { const u = lmLink(); (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(() => toast("Link copied"), () => toast(u)); break; }
-    case "aopen": S.light = +d.i; render(); break;
+    case "aopen": S.light = +d.i; S.lbFrom = a.id || ""; render(); break;
     case "anav": { const n = albumList().length; S.light = (S.light + (+d.d) + n) % n; render(); break; }
     case "csv": csv(); break;
     case "toggle": {
@@ -612,7 +624,14 @@ app.addEventListener("click", e => {
   }
 });
 app.addEventListener("keydown", e => {
-  if (e.key === "Escape" && (S.dd || A.light !== null || S.light !== null)) { S.dd = null; A.light = null; S.light = null; render(); return; }
+  if (e.key === "Escape" && S.menu && !S.light && A.light === null) { S.menu = false; S.dd = null; render(); const h = document.getElementById("hamb"); if (h) h.focus(); return; }
+  if (e.key === "Escape" && (S.dd || A.light !== null || S.light !== null)) { const back = S.light !== null ? S.lbFrom : ""; S.dd = null; A.light = null; S.light = null; render(); if (back) { const f = document.getElementById(back); if (f) f.focus(); } return; }
+  if (e.key === "Tab" && S.light !== null) {
+    const lb = document.getElementById("lb"); const f = lb ? [...lb.querySelectorAll("button")] : [];
+    if (f.length) { const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); } }
+  }
   if (S.light !== null && (e.key === "ArrowRight" || e.key === "ArrowLeft")) { const n = albumList().length; S.light = (S.light + (e.key === "ArrowRight" ? 1 : -1) + n) % n; render(); return; }
   const dz = e.target.closest(".drop"); if (dz && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); document.getElementById("fileIn").click(); }
 });

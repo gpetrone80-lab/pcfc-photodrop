@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UI/UX review · Pinellas County Fire Conference</title>
+<style>
+:root{--bg:#0b0b0c;--panel:#141416;--line:#2b2b2f;--ink:#f4f4f5;--muted:#b4b4ba;--red:#ff4a4f;--amber:#f2a33a;--ok:#5fd68a;--btn:#d7262b}
+@media (prefers-color-scheme:light){:root{--bg:#f6f6f7;--panel:#fff;--line:#d9d9de;--ink:#17171a;--muted:#55555c;--red:#b3121a;--amber:#8a5200;--ok:#157a3d;--btn:#c61f25}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.skip{position:absolute;left:12px;top:-80px;background:#fff;color:#000;padding:10px 14px;font-weight:700}.skip:focus{top:10px}
+header,main,footer{max-width:1240px;margin:0 auto;padding-inline:clamp(16px,4vw,32px)}
+header{padding-block:28px 8px}
+h1{font-size:clamp(26px,4vw,38px);line-height:1.1;margin:0 0 8px;letter-spacing:-.01em}
+h2{font-size:22px;margin:0 0 12px}
+p{margin:0}.lede{color:var(--muted);max-width:70ch}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:22px 0 8px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stat b{display:block;font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:14px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:26px 0 12px}
+.bar .sp{flex:1}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button,select,.btn{font:inherit;color:var(--ink);background:transparent;border:0;padding:0 16px;min-height:44px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--btn);color:#fff;font-weight:700}
+select{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0 12px}
+.btn{border:1px solid var(--line);border-radius:10px;text-decoration:none;display:inline-flex;align-items:center;background:var(--panel)}
+.btn.primary{background:var(--btn);border-color:var(--btn);color:#fff;font-weight:700}
+.compare{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
+.pane h3{margin:0;padding:12px 16px;font-size:15px;display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line)}
+.tag{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:99px}
+.tag.before{background:rgb(255 74 79 / .16);color:var(--red)}.tag.after{background:rgb(95 214 138 / .16);color:var(--ok)}
+.view{height:640px;overflow:hidden;position:relative;display:flex;justify-content:center;background:#000}
+.view iframe{border:0;background:#000;transform-origin:top left;position:absolute;top:0;left:0}
+.hint{color:var(--muted);font-size:14px;margin-top:10px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:15px}
+th,td{text-align:left;vertical-align:top;padding:12px 14px;border-bottom:1px solid var(--line)}
+th{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);background:rgb(127 127 127 / .08)}
+tr:last-child td{border-bottom:0}
+.sev{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:6px;white-space:nowrap;display:inline-block}
+.sev.hi{background:rgb(255 74 79 / .18);color:var(--red)}.sev.md{background:rgb(242 163 58 / .2);color:var(--amber)}.sev.ux{background:rgb(120 160 255 / .18);color:#8fb0ff}
+@media (prefers-color-scheme:light){.sev.ux{color:#1f4fb8}}
+code{background:rgb(127 127 127 / .16);padding:1px 6px;border-radius:5px;font-size:.92em}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.card h3{margin:0 0 8px;font-size:17px}.card ul{margin:0;padding-left:20px;display:grid;gap:6px;color:var(--muted)}
+section{margin-block:34px}
+footer{padding-block:20px 48px;color:var(--muted);font-size:14px}
+@media (max-width:900px){.compare{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<header>
+  <h1>UI/UX review: Pinellas County Fire Conference</h1>
+  <p class="lede">I audited every page (Home, 2027, Share Photos, Album, Survey, Contact) against accessibility, touch, readability and form-feedback rules, then fixed what I found in a copy of your site. Your original files are untouched.</p>
+  <div class="stats" role="list">
+    <div class="stat" role="listitem"><b>14</b><span>accessibility fixes</span></div>
+    <div class="stat" role="listitem"><b>2</b><span>UX additions</span></div>
+    <div class="stat" role="listitem"><b>0</b><span>original files changed</span></div>
+    <div class="stat" role="listitem"><b>0</b><span>console errors after changes</span></div>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+<section aria-labelledby="cmp">
+  <h2 id="cmp">Before and after</h2>
+  <div class="bar">
+    <label for="pg" class="hint" style="margin:0">Page</label>
+    <select id="pg">
+      <option value="home">Home</option><option value="2027">2027 Conference</option><option value="photos">Share Photos</option>
+      <option value="album">2026 Photo Album</option><option value="survey">Survey</option><option value="contact">Contact</option>
+    </select>
+    <div class="seg" role="group" aria-label="Screen size">
+      <button type="button" id="dsk" aria-pressed="true">Desktop</button><button type="button" id="mob" aria-pressed="false">Phone</button>
+    </div>
+    <span class="sp"></span>
+    <a class="btn" href="preview-original.html" target="_blank" rel="noopener">Open original ↗</a>
+    <a class="btn primary" href="preview-improved.html" target="_blank" rel="noopener">Open improved ↗</a>
+  </div>
+  <div class="compare">
+    <div class="pane"><h3>Original <span class="tag before">Before</span></h3><div class="view" id="v1"><iframe id="f1" title="Original site preview"></iframe></div></div>
+    <div class="pane"><h3>Improved <span class="tag after">After</span></h3><div class="view" id="v2"><iframe id="f2" title="Improved site preview"></iframe></div></div>
+  </div>
+  <p class="hint">Both previews run in demo mode (no database connection), so forms and uploads work safely. Try Tab on each side: the improved one shows a skip link first, a visible focus ring in every form field, and a pause button on the 2027 slideshow. Open the album and click a photo to compare the viewer.</p>
+</section>
+
+<section aria-labelledby="fnd">
+  <h2 id="fnd">What I found and changed</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th scope="col">Priority</th><th scope="col">Issue (before)</th><th scope="col">Fix (after)</th><th scope="col">WCAG</th></tr></thead>
+    <tbody>
+    <tr><td><span class="sev hi">High</span></td><td>No skip link. Keyboard users tabbed through the whole header on every page.</td><td>“Skip to main content” appears on first Tab and jumps to <code>&lt;main&gt;</code>. The survey page also gets “Skip the embedded survey”.</td><td>2.4.1</td></tr>
+    <tr><td><span class="sev hi">High</span></td><td>Home page had no <code>&lt;h1&gt;</code>, so screen readers had no page title heading.</td><td>The hero headline is now the page <code>&lt;h1&gt;</code>, same look.</td><td>1.3.1 · 2.4.6</td></tr>
+    <tr><td><span class="sev hi">High</span></td><td>2027 slideshow auto-advances forever with no way to stop it. It also had a bug: after the first auto-advance the active dot lost its highlight and its <code>aria-current</code> value became empty.</td><td>Pause/Play button, active dot always correct (<code>true</code>/<code>false</code>), valid carousel region role.</td><td>2.2.2 · 4.1.2</td></tr>
+    <tr><td><span class="sev hi">High</span></td><td>Form inputs had <code>outline:none</code> and relied on a border colour change. The amber focus ring was nearly invisible on the white sign-up section and the amber survey band.</td><td>3px ring on every field, black on light backgrounds, amber on dark.</td><td>2.4.7 · 1.4.11</td></tr>
+    <tr><td><span class="sev hi">High</span></td><td>Errors were not linked to their field, and after a successful submit focus fell back to <code>&lt;body&gt;</code> because the page re-renders.</td><td><code>aria-invalid</code> + <code>aria-describedby</code>, focus goes to the bad field, and to the success message when it works. Messages are more specific and have a “!” marker, not just colour.</td><td>3.3.1 · 3.3.3 · 4.1.3</td></tr>
+    <tr><td><span class="sev hi">High</span></td><td>Photo viewer: focus stayed behind it, Tab could wander into the page, and closing dropped focus.</td><td>Focus moves into the viewer, Tab stays inside, Esc closes and returns focus to the photo you opened (<code>aria-modal</code> set).</td><td>2.4.3 · 2.1.2</td></tr>
+    <tr><td><span class="sev md">Medium</span></td><td>Phone menu stayed open on Esc.</td><td>Esc closes it and returns focus to the Menu button, which now has <code>aria-controls</code>.</td><td>2.1.1</td></tr>
+    <tr><td><span class="sev md">Medium</span></td><td>Small tap targets: slideshow dots 28px, social icons 36px, footer and quick links 32px.</td><td>All 44px tall (dots 30×44, pause 44×44).</td><td>2.5.5 · 2.5.8</td></tr>
+    <tr><td><span class="sev md">Medium</span></td><td>Placeholder text was the browser default, about 4.1:1 on the dark fields.</td><td>Placeholders are 5:1 or better on both dark and light sections.</td><td>1.4.3</td></tr>
+    <tr><td><span class="sev md">Medium</span></td><td>Text as small as 11–13px (breadcrumb, notes, photo credit, pills).</td><td>12–14.5px, line spacing unchanged.</td><td>1.4.4 (best practice)</td></tr>
+    <tr><td><span class="sev md">Medium</span></td><td>Links that open a new tab (Facebook, Instagram, Google Photos, survey) gave no warning.</td><td>Hidden “(opens in a new tab)” text for screen readers.</td><td>3.2.5 (advisory)</td></tr>
+    <tr><td><span class="sev md">Medium</span></td><td>Toast messages (“Link copied”) were created on demand and vanished after 2.8s.</td><td>One persistent polite live region, shown for 5s.</td><td>4.1.3 · 2.2.1</td></tr>
+    <tr><td><span class="sev md">Medium</span></td><td>The badge image repeated “Pinellas County Fire Conference” right next to the visible name.</td><td>Badge marked decorative so it is read once.</td><td>1.1.1 (best practice)</td></tr>
+    <tr><td><span class="sev md">Medium</span></td><td>Smooth scrolling to anchors ignored “reduce motion”.</td><td>Respects the setting.</td><td>2.3.3</td></tr>
+    <tr><td><span class="sev ux">UX</span></td><td>Date and location were only in the header at 1260px+, so most visitors never saw “Dates TBA” or where it is.</td><td>New “When / Where / Format” bar under the home hero, stacked compactly on phones.</td><td>—</td></tr>
+    <tr><td><span class="sev ux">UX</span></td><td>Photo credit overlapped the hero headline on phones.</td><td>Extra top spacing on phones.</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="ok">
+  <h2 id="ok">Already good (kept as is)</h2>
+  <div class="cols">
+    <div class="card"><h3>Strengths</h3><ul><li>Visible labels above every field, no placeholder-only inputs</li><li>Correct <code>autocomplete</code> and input types on email, name, organization</li><li>Reduced-motion rules in CSS, and autoplay off when it is set</li><li>Good colour contrast on body text and buttons</li><li>Responsive layout with container queries, no horizontal scroll</li></ul></div>
+    <div class="card"><h3>Not changed — your call</h3><ul><li>Admin pages: not touched. The admin photo viewer uses the same pattern, so it would benefit from the same focus fix.</li><li>Survey iframe has a fixed 1500px height, so long forms scroll inside the page. Microsoft Forms controls this.</li><li>Consider a sticky “Get 2027 updates” button on phones, since the mailing list is the main goal.</li><li>Google Fonts loads 8 weights; trimming to the ones used would speed first paint.</li></ul></div>
+    <div class="card"><h3>How to adopt</h3><ul><li>The improved code lives in <code>assets/site.improved.css</code> and <code>assets/site.improved.js</code>.</li><li>To go live, point your pages at those files, or rename them over <code>site.css</code> / <code>site.js</code>. No page HTML needs to change.</li><li>Test once with the real Firebase connection, since previews run in demo mode.</li></ul></div>
+  </div>
+</section>
+</main>
+<footer>Preview pages only. Nothing here is sent anywhere.</footer>
+
+<script>
+(function(){
+  var pg=document.getElementById("pg"),dsk=document.getElementById("dsk"),mob=document.getElementById("mob");
+  var views=[["v1","f1","preview-original.html"],["v2","f2","preview-improved.html"]];
+  var mode="desktop", DW=1100, MW=390;
+  function load(){views.forEach(function(v){document.getElementById(v[1]).src=v[2]+"?page="+encodeURIComponent(pg.value)})}
+  function fit(){
+    views.forEach(function(v){
+      var box=document.getElementById(v[0]),f=document.getElementById(v[1]),W=box.clientWidth,H=box.clientHeight;
+      if(mode==="desktop"){var k=Math.min(1,W/DW);f.style.width=DW+"px";f.style.height=(H/k)+"px";f.style.transform="scale("+k+")";f.style.left="0"}
+      else{f.style.width=MW+"px";f.style.height=H+"px";f.style.transform="none";f.style.left=Math.max(0,(W-MW)/2)+"px"}
+    });
+  }
+  function setMode(m){mode=m;dsk.setAttribute("aria-pressed",m==="desktop");mob.setAttribute("aria-pressed",m==="mobile");fit()}
+  pg.addEventListener("change",load);dsk.addEventListener("click",function(){setMode("desktop")});mob.addEventListener("click",function(){setMode("mobile")});
+  window.addEventListener("resize",fit);
+  var q=new URLSearchParams(location.search).get("page");if(q)pg.value=q;
+  load();fit();
+})();
+</script>
+</body>
+</html>
