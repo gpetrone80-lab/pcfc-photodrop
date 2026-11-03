@@ -31,7 +31,7 @@ const CFG = {
   location: "Pinellas County, FL",
   albumUrl: "https://photos.app.goo.gl/PQEAafha5d4E1H9f7",
   instagram: "https://www.instagram.com/pinellascountyfireconference/",
-  facebook: "https://www.facebook.com/Pinellascountyfireconference"
+  facebook: "https://www.facebook.com/share/1dBttD14kH/?mibextid=wwXIfr"
 };
 
 /* ───────────── Paths & environment ───────────── */
