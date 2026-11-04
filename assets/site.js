@@ -128,11 +128,10 @@ function footer() {
   const f = x => x.replace("<a ", '<a class="fl" ');
   return `<footer class="efoot"><div class="wrap"><div class="ecols">
     <div class="stack"><a class="ebrand" href="${URLS.home}" data-go="home">${BADGE}<span class="eword">Pinellas County<b>Fire Conference</b></span></a>
-      <small style="text-transform:uppercase;letter-spacing:.06em;font-size:12px">Follow us</small>
+      <small style="text-transform:uppercase;letter-spacing:.06em;font-size:13px">Follow us</small>
       <div class="social"><a href="${CFG.facebook}" target="_blank" rel="noopener" aria-label="Facebook">${I.fb}</a><a href="${CFG.instagram}" target="_blank" rel="noopener" aria-label="Instagram">${I.ig}</a></div></div>
-    <div><h2 class="fh">Pages</h2>${f(go("home", "Home"))}${f(go("2027", CFG.nextYear + " Conference"))}${f(go("photos", "Share Photos"))}${f(go("album", "2026 Photo Album"))}${CFG.surveyId ? f(go("survey", "2026 Survey")) : ""}${f(go("contact", "Contact"))}</div>
-    <div><h2 class="fh">Event info</h2>${f(go("2027", "What to expect", "", "schedule"))}${f(go("2027", "Mailing list", "", "list"))}${f(go("photos", "Photo release", "", "release"))}${f(ext(CFG.albumUrl, "Full album on Google Photos"))}</div>
-    <div><h2 class="fh">Organizers</h2>${f(go("admin", "Organizer sign-in"))}${f(ext(CFG.facebook, "Facebook"))}${f(ext(CFG.instagram, "Instagram"))}</div>
+    <div><h2 class="fh">Pages</h2>${f(go("2027", CFG.nextYear + " Conference"))}${f(go("photos", "Share Photos"))}${f(go("album", "2026 Photo Album"))}${CFG.surveyId ? f(go("survey", "2026 Survey")) : ""}${f(go("contact", "Contact"))}</div>
+    <div><h2 class="fh">Event info</h2>${f(go("2027", "What to expect", "", "schedule"))}${f(go("2027", "Mailing list", "", "list"))}${f(go("photos", "Photo release", "", "release"))}${f(ext(CFG.albumUrl, "Full album on Google Photos"))}${f(go("admin", "Organizer sign-in"))}</div>
    </div><p class="ecopy">© ${new Date().getFullYear()} Pinellas County Fire Conference · Hosted every year in Pinellas County, Florida · Hosted by local training chiefs &amp; instructors</p></div></footer>`;
 }
 function quickLinks() {
@@ -162,12 +161,12 @@ function uploader() {
    <input type="file" id="fileIn" accept="image/*" multiple hidden>
    <div class="drop" role="button" tabindex="0" data-act="pick">${I.up}<strong>Choose photos from your phone</strong><small>JPG, PNG or HEIC · up to ${CFG.maxMB} MB each</small></div>
    ${n ? `<div class="stack" style="gap:6px">${S.queue.map((q, i) => `<div class="qrow ${q.st}" id="q${i}"><img src="${q.url}" alt=""><div><div class="nm"><span>${esc(q.name)}</span><b>${q.label}</b></div><div class="pbar"><i style="width:${q.pct}%"></i></div></div></div>`).join("")}</div>` : ""}
-   <label class="check"><input type="checkbox" id="agree" ${S.agreed ? "checked" : ""}><span>I agree to the photo release and confirm I have the right to share these photos.</span></label>
    <details class="release" id="release"><summary>Read the photo release</summary>
     <p><b>PHOTO RELEASE</b>: By checking the box and uploading, I grant the Pinellas County Fire Conference, its organizers, and Gianluca Petrone permission to use, copy, edit, crop, publish, and share the photo(s) I upload on Facebook, Instagram, the conference website, and other promotional materials, without payment, royalties, or any further approval from me.</p>
     <p>I confirm the photos are mine to share, and that I have permission from the people pictured where it is needed. I understand the photos may show my own image and likeness, and I release the Pinellas County Fire Conference and its organizers from any claims or liability connected with this use.</p>
     <p>I am 18 years or older, or I am the parent/legal guardian of the minor pictured. If I later want a photo taken down, I can <a class="inlink" href="${URLS.contact}?topic=photo" data-go="contact" data-topic="photo">contact the conference</a> and it will be removed from future use.</p></details>
-   <button type="button" class="btn" data-act="upload" ${ready ? "" : "disabled"}>${label}</button>
+   <label class="check"><input type="checkbox" id="agree" ${S.agreed ? "checked" : ""}><span>I agree to the photo release above and confirm I have the right to share these photos.</span></label>
+   <button type="button" class="btn upl" data-act="upload" ${ready ? "" : "disabled"}>${label}</button>
    ${S.uploadedAll ? `<div class="success" role="status">All photos uploaded. Thank you for sharing the fire!</div>` : ""}
    ${DEMO ? `<p class="fine">Preview mode: photos stay in this browser and are not sent anywhere.</p>` : `<p class="fine">No account, no sign-in. Your shots may be featured on our social pages.</p>`}
    ${mineList()}
@@ -301,15 +300,15 @@ function albumList() {
   return a;
 }
 function schedule() {
-  const col = (day, items) => `<div><h4>${day}</h4>${items.map(([c, t]) => `<span class="pill ${c}">${t}</span>`).join("")}</div>`;
+  const col = (day, items) => `<div><h4>${day}</h4><ul class="slist">${items.map(([c, t]) => `<li>${t}</li>`).join("")}</ul></div>`;
   return `<section class="esec" id="schedule" style="padding-top:0"><div class="wrap"><h2 class="ecenter">What to expect</h2><p class="fine">Based on the 2026 conference (${esc(CFG.lastDates)}). The ${CFG.nextYear} program will be posted here when it's announced.</p>
-   <div class="sched">${col("Speaker day", [["w", "Opening ceremony & color guard"], ["w", "Speakers"]])}${col("Live fire HOT days", [["r", "Burn room evolutions"], ["r", "2 Man & A Can"], ["r", "Training tower"]])}${col("Run by", [["o", "Local training chiefs & instructors"]])}</div>
+   <div class="sched">${col("Speaker day", [["w", "Opening ceremony & color guard"], ["w", "Speakers"]])}${col("Live fire hands-on training (HOT)", [["r", "Burn room evolutions"], ["r", "2 Man & A Can"], ["r", "Training tower"]])}${col("Run by", [["o", "Local training chiefs & instructors"]])}</div>
    <div class="ectas">${go("album", "See photos from 2026", "btn o")}</div></div></section>`;
 }
 function home() {
   const door = (p, img, h, t, cta) => `<a class="door" href="${URLS[p]}" data-go="${p}" style="${bg(img)}"><span><b>${h}</b><small>${t}</small><em>${cta} →</em></span></a>`;
   return `${nav()}<main id="main" tabindex="-1">
-  ${hero("live-fire", "Train with the Pinellas County fire family", `Speaker day and live fire HOT days, run by local training chiefs and instructors. The ${CFG.nextYear} conference is being planned now.`,
+  ${hero("live-fire", "Train with the Pinellas County fire family", `Speaker day and live fire hands-on training (HOT), run by local training chiefs and instructors. The ${CFG.nextYear} conference is being planned now.`,
      go("2027", `Get ${CFG.nextYear} updates`, "btn", "list") + go("photos", "Share your 2026 photos", "btn w"), "h1")}
   <section class="facts" aria-label="Conference at a glance"><div class="wrap"><dl><div><dt>${I.cal} When</dt><dd>${CFG.nextYear} · ${esc(CFG.nextDates)}</dd></div><div><dt>${I.pin} Where</dt><dd>${esc(CFG.location)}</dd></div><div><dt>${I.flame} Format</dt><dd>Speaker day + live fire HOT days</dd></div></dl></div></section>
   ${CFG.surveyId ? `<section class="sband"><div class="wrap"><p><b>Were you at the 2026 conference?</b> Tell us what to keep and what to change. The survey takes about 5 minutes.</p>${go("survey", "Take the survey", "btn o")}</div></section>` : ""}
@@ -328,7 +327,7 @@ function p2027() {
    <div class="eboxes"><div class="obox"><h3>What we know so far</h3><dl><dt>Where</dt><dd>${esc(CFG.location)}</dd><dt>Format</dt><dd>Speaker day + live fire HOT days</dd><dt>Dates</dt><dd>${CFG.nextDates === "Dates TBA" ? "To be announced, about 6 months before the event" : esc(CFG.nextDates)}</dd><dt>Host</dt><dd>To be announced</dd></dl><p>Join the list and you'll get an email at each announcement.</p></div>${quickLinks()}</div></div></section>
   ${schedule()}
   <section class="esec" style="padding-top:0"><div class="wrap"><h2 class="ecenter">What happens next</h2>
-   <div class="sched">${steps.map(([d, it]) => `<div><h4>${d}</h4>${it.map(([c, t]) => `<span class="pill ${c}">${t}</span>`).join("")}</div>`).join("")}</div></div></section>
+   <div class="sched">${steps.map(([d, it]) => `<div><h4>${d}</h4><ul class="slist">${it.map(([c, t]) => `<li>${t}</li>`).join("")}</ul></div>`).join("")}</div></div></section>
   <section class="esec" style="padding-top:0"><div class="wrap"><h2 class="ecenter">Scenes from 2026</h2>${slides()}<div class="ectas">${go("album", "See the 2026 photo album", "btn o")}${go("photos", "Share your photos", "btn w")}</div></div></section>
   ${listSection("2027-page")}</main>${footer()}`;
 }

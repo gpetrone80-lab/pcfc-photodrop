@@ -501,3 +501,18 @@ a.btn{text-decoration:none}
 .msg h2{font-size:18px;text-transform:uppercase;font-weight:500;margin:0}
 .msg .body{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:1.55}
 .msg .mrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* Quick wins (UX critique, Nov 2026) */
+.sched h4{color:#f2a33a;font-size:16px;letter-spacing:.08em}
+.slist{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.slist li{display:grid;grid-template-columns:10px minmax(0,1fr);gap:12px;align-items:start;font-weight:600;font-size:16px;line-height:1.35}
+.slist li::before{content:"";width:8px;height:8px;margin-top:.45em;background:#d7262b;transform:rotate(45deg)}
+.btn.upl[disabled]{opacity:1;background:transparent;color:var(--muted);border:1px dashed var(--line-strong,#6a6a6a)}
+.ecols{grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(0,1fr))}
+.ecols a.fl,.ecols button.fl{font-size:15px}
+.ecopy{font-size:13px}
+@container site (max-width: 640px){
+ .ecols{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 16px}
+ .ecols>.stack{grid-column:1/-1}
+ .ecols .fh{font-size:18px}
+}
