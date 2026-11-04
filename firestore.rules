@@ -31,6 +31,19 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // Contact-page messages: anyone visiting the site can send one; only the admin can read or delete.
+    match /messages/{docId} {
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['name', 'email', 'topic', 'message', 'src', 'at'])
+        && request.resource.data.email is string && request.resource.data.email.size() <= 254
+        && request.resource.data.message is string && request.resource.data.message.size() <= 5000
+        && optionalText('name', 120)
+        && optionalText('topic', 60)
+        && optionalText('src', 100);
+      allow read, delete: if isAdmin();
+      allow update: if false;
+    }
+
     // Attendee photos the organizers chose to show in the public 2026 Photo Album.
     match /featured/{docId} {
       allow read: if true;

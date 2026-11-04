@@ -495,3 +495,9 @@ a.btn{text-decoration:none}
   html:has(.has-cta){scroll-padding-bottom:96px}
 }
 @media (prefers-reduced-motion: reduce){.stickycta,.stickycta.hide{transition:none}}
+/* admin messages */
+.msg{background:var(--surface);border:var(--card-border);padding:14px 16px;display:grid;gap:8px}
+.msg header{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.msg h2{font-size:18px;text-transform:uppercase;font-weight:500;margin:0}
+.msg .body{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:1.55}
+.msg .mrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}

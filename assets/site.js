@@ -379,6 +379,7 @@ function contactPage() {
    <div class="field"><label for="cm">Message (required)</label><textarea id="cm" rows="6" required${S.cErrField === "cm" ? ' aria-invalid="true" aria-describedby="cerr"' : ""}></textarea></div>
    <input type="text" id="chp" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
    ${S.cErr ? `<p class="errbox" id="cerr" role="alert"><span aria-hidden="true">! </span>${esc(S.cErr)}</p>` : ""}
+   ${S.cMailto ? `<a class="btn o" href="${esc(S.cMailto)}">Email us instead</a><p class="fine">Or write to <b>${esc(CFG.contactEmail)}</b>.</p>` : ""}
    <button class="btn" type="submit" ${S.sending ? "disabled" : ""}>${S.sending ? "Sending…" : "Send message"}</button>
    <p class="fine">Messages go to the conference organizers. We never share your email.</p></form>`;
   return `${nav()}<main id="main" tabindex="-1">${crumb("Contact", "Contact us")}
@@ -389,23 +390,37 @@ function contactPage() {
       <h3 style="text-align:left">Social</h3><p>${ext(CFG.facebook, "Message us on Facebook ↗", "inlink")}<br>${ext(CFG.instagram, "Instagram ↗", "inlink")}</p></div></div>
    ${form}</div></section></main>${footer()}`;
 }
+function mailtoLink(name, email, topic, msg) {
+  const body = `${msg}\n\n— ${name || "(no name)"}, ${email}`;
+  return `mailto:${CFG.contactEmail}?subject=${encodeURIComponent("PCFC website message: " + topic)}&body=${encodeURIComponent(body)}`;
+}
 async function sendContact(form) {
   const v = id => (form.querySelector("#" + id) || {}).value || "";
   if (v("chp")) { S.sent = true; render(); return; }                  // honeypot
-  const email = v("ce").trim(), msg = v("cm").trim(), topic = (TOPICS.find(t => t[0] === v("ct")) || TOPICS[0])[1];
+  const name = v("cn").trim(), email = v("ce").trim(), msg = v("cm").trim(), topic = (TOPICS.find(t => t[0] === v("ct")) || TOPICS[0])[1];
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { S.cErr = "Enter an email address like name@department.gov so we can reply."; S.cErrField = "ce"; S.focusAfter = "ce"; render(); return; }
   if (msg.length < 5) { S.cErr = "Write a short message so we know how to help."; S.cErrField = "cm"; S.focusAfter = "cm"; render(); return; }
-  S.cErrField = "";
+  S.cErrField = ""; S.cMailto = "";
   S.cErr = ""; S.sending = true; S.cEmail = email; S.topic = v("ct"); render();
-  try {
-    if (!PREVIEW) {
-      const r = await fetch("https://formsubmit.co/ajax/" + CFG.contactEmail, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ name: v("cn").trim(), email, topic, message: msg, source: SRC || "direct", _replyto: email, _subject: "PCFC website message: " + topic, _template: "table" }) });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok || String(j.success) === "false") throw new Error("send failed");
-    }
-    S.sent = true; S.focusAfter = "msgok";
-  } catch (e) { S.cErr = `Your message didn't go through. Please email us at ${CFG.contactEmail} instead.`; }
+  if (PREVIEW) { S.sent = true; S.focusAfter = "msgok"; S.sending = false; render(); return; }
+  // 1) Save the message in the database (Admin → Messages), so it is never lost.
+  const save = (async () => {
+    if (DEMO) throw new Error("database not loaded");
+    if (!fb.auth().currentUser) await fb.auth().signInAnonymously();
+    await fb.firestore().collection("messages").add({ name: name.slice(0, 120), email, topic, message: msg.slice(0, 5000), src: SRC || "direct", at: firebase.firestore.FieldValue.serverTimestamp() });
+  })();
+  // 2) Email it to the conference inbox through formsubmit.co.
+  const mail = (async () => {
+    const r = await fetch("https://formsubmit.co/ajax/" + CFG.contactEmail, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ name, email, topic, message: msg, source: SRC || "direct", _replyto: email, _subject: "PCFC website message: " + topic, _template: "table" }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || String(j.success) === "false") throw new Error(j.message || "HTTP " + r.status);
+  })();
+  const [saved, mailed] = await Promise.allSettled([save, mail]);
+  if (saved.status === "rejected") console.warn("Contact form: not saved to the database:", saved.reason && saved.reason.message);
+  if (mailed.status === "rejected") console.warn("Contact form: email not sent:", mailed.reason && mailed.reason.message);
+  if (saved.status === "fulfilled" || mailed.status === "fulfilled") { S.sent = true; S.focusAfter = "msgok"; }
+  else { S.cErr = "Your message didn't go through. Tap the button below to send it from your own email app instead. Your message is already filled in."; S.cMailto = mailtoLink(name, email, topic, msg); }
   S.sending = false; render();
 }
 
@@ -438,6 +453,14 @@ function admin() {
      ${A.err ? `<p class="errbox" role="alert">${esc(A.err)}</p>` : ""}
      ${A.loading ? `<p class="empty">Loading photos…</p>` : items.length ? `<div class="grid">${items.map((p, i) => `<div class="tilewrap"><button type="button" class="tile ${A.sel.has(i) ? "sel" : ""}" id="t${i}" data-act="tile" data-i="${i}" aria-pressed="${A.sel.has(i)}" aria-label="${esc(p.name)}${A.feat.has(p.path) ? ", shown on site" : ""}"><img src="${esc(p.url)}" alt="" loading="lazy"><span class="tick" aria-hidden="true">✓</span>${A.feat.has(p.path) ? `<span class="star" aria-hidden="true">★ On site</span>` : ""}<span class="meta">${esc(p.name)}</span></button><button type="button" class="tilev" id="tv${i}" data-act="tileview" data-i="${i}" aria-label="View ${esc(p.name)} full size"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button></div>`).join("")}</div>
        <p class="fine">Tap a photo to select it. Use the corner button (or double-click) to view it full size.</p>` : `<p class="empty">No photos uploaded yet. Check back after the conference kicks off!</p>`}`;
+  } else if (t === "messages") {
+    const ms = A.msgs || [];
+    body = A.msgErr ? `<p class="errbox" role="alert">${esc(A.msgErr)}</p>` : `<div class="ahead" style="margin:0"><p class="fine">${A.msgs === null ? "Loading messages…" : `${ms.length} message${ms.length === 1 ? "" : "s"} from the Contact page, newest first.`}</p><button type="button" class="btn sm alt" data-act="msgrefresh">↻ Refresh</button></div>
+     ${ms.map((m, i) => `<article class="msg" aria-labelledby="mh${i}"><header><h2 id="mh${i}">${esc(m.topic || "Message")}</h2><span class="fine">${esc(m.when)}${m.src && m.src !== "direct" ? " · via " + esc(m.src) : ""}</span></header>
+       <p class="from"><b>${esc(m.name || "(no name)")}</b> · <a class="inlink" href="mailto:${esc(m.email)}?subject=${encodeURIComponent("Re: " + (m.topic || "your message"))}">${esc(m.email)}</a></p>
+       <p class="body">${esc(m.message)}</p>
+       <div class="mrow"><a class="btn sm" href="mailto:${esc(m.email)}?subject=${encodeURIComponent("Re: " + (m.topic || "your message"))}">Reply by email</a>
+       ${A.msgConfirm === m.id ? `<span class="inline-confirm">Delete this message? <button type="button" class="btn sm danger" data-act="msgdelyes" data-id="${esc(m.id)}">Delete</button><button type="button" class="btn sm alt" data-act="msgdelno">Keep</button></span>` : `<button type="button" class="btn sm alt" data-act="msgdel" data-id="${esc(m.id)}">Delete</button>`}</div></article>`).join("") || (A.msgs === null ? "" : `<p class="empty">No messages yet.</p>`)}`;
   } else if (t === "signups") {
     const rows = A.signups || [], by = {};
     rows.forEach(r => { const x = String(r.src || ""), k = x.includes(" · ") ? x.split(" · ")[0] : "direct"; by[k] = (by[k] || 0) + 1; });
@@ -457,9 +480,10 @@ function admin() {
   return `<a class="skip" href="#main">Skip to main content</a><div class="admin"><aside class="side" aria-label="Admin menu"><a class="brand" href="${URLS.home}" data-go="home">${BADGE}<span>PCFC Admin<small>${esc(A.user.email || "Organizer")}</small></span></a>
     <button type="button" data-act="atab" data-t="photos" ${cur("photos")}>Photos <span>${items.length}</span></button>
     <button type="button" data-act="atab" data-t="signups" ${cur("signups")}>${CFG.nextYear} sign-ups <span>${A.signups ? A.signups.length : ""}</span></button>
+    <button type="button" data-act="atab" data-t="messages" ${cur("messages")}>Messages <span>${A.msgs ? A.msgs.length : ""}</span></button>
     <button type="button" data-act="atab" data-t="settings" ${cur("settings")}>Settings</button>
     <span class="grow"></span>${go("home", "View site ↗")}<button type="button" data-act="signout">Sign out</button></aside>
-   <main class="amain" id="main" tabindex="-1"><div class="ahead"><h1>${{ photos: "Photo uploads", signups: CFG.nextYear + " sign-ups", settings: "Settings" }[t]}</h1>${DEMO ? `<span class="sample">Preview · sample data</span>` : ""}</div>${body}</main>
+   <main class="amain" id="main" tabindex="-1"><div class="ahead"><h1>${{ photos: "Photo uploads", signups: CFG.nextYear + " sign-ups", messages: "Messages", settings: "Settings" }[t]}</h1>${DEMO ? `<span class="sample">Preview · sample data</span>` : ""}</div>${body}</main>
    ${A.light !== null && items[A.light] ? `<div class="lightbox" id="lb" data-act="close" role="dialog" aria-modal="true" aria-label="Photo viewer: ${esc(items[A.light].name)}"><div class="box"><img src="${esc(items[A.light].url)}" alt="${esc(items[A.light].name)}"><div class="row"><span>${esc(items[A.light].name)} <span class="fine" style="color:#ddd">(${A.light + 1} of ${items.length})</span></span><span style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn sm alt lbx" id="lbprev" data-act="adnav" data-d="-1" aria-label="Previous photo">←</button><button type="button" class="btn sm alt lbx" id="lbnext" data-act="adnav" data-d="1" aria-label="Next photo">→</button><a class="btn sm" href="${esc(items[A.light].url)}" target="_blank" rel="noopener">⬇ Download<span class="sr"> (opens in a new tab)</span></a><button type="button" class="btn sm alt lbx" id="lbclose" data-act="close">Close</button></span></div></div></div>` : ""}</div>`;
 }
 function lmLink() {
@@ -508,6 +532,23 @@ async function loadPhotos() {
     await loadFeatured();
   } catch (e) { A.err = "Couldn't load photos. Check your connection and try again."; }
   A.loading = false; render();
+}
+async function loadMessages() {
+  A.msgErr = "";
+  try {
+    if (DEMO) { if (!A.msgs) A.msgs = [{ id: "demo1", name: "Sample Sender", email: "sample@example.com", topic: "Classes & training", message: "Sample message: will the 2027 classes be posted on the site?", when: "Nov 4, 2026", src: "direct" }]; }
+    else {
+      const snap = await fb.firestore().collection("messages").orderBy("at", "desc").limit(200).get();
+      A.msgs = snap.docs.map(d => { const x = d.data(); const at = x.at && x.at.toDate ? x.at.toDate() : null;
+        return Object.assign({ id: d.id }, x, { when: at ? at.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "" }); });
+    }
+  } catch (e) { A.msgs = []; A.msgErr = "Messages couldn't be loaded. Publish the updated database rules (firestore.rules, see SITE-GUIDE.md) so admins can read the messages collection."; }
+  render();
+}
+async function deleteMessage(id) {
+  try { if (!DEMO) await fb.firestore().collection("messages").doc(id).delete(); A.msgs = (A.msgs || []).filter(m => m.id !== id); toast("Message deleted"); }
+  catch (e) { toast("Couldn't delete the message. Try again."); }
+  A.msgConfirm = null; render();
 }
 async function loadSignups() {
   A.signErr = "";
@@ -626,7 +667,7 @@ app.addEventListener("click", e => {
     case "surveyshow": S.surveyOpen = !S.surveyOpen; render(); break;
     case "copy": { const u = SITE + (PUBLIC[S.page] || "/");
       (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(() => toast("Link copied"), () => toast(u)); break; }
-    case "atab": A.tab = d.t; A.confirm = false; announce({ photos: "Photo uploads", signups: CFG.nextYear + " sign-ups", settings: "Settings" }[d.t] + " page"); render(); if (d.t === "signups" && !A.signups) loadSignups(); break;
+    case "atab": A.tab = d.t; A.confirm = false; announce({ photos: "Photo uploads", signups: CFG.nextYear + " sign-ups", messages: "Messages", settings: "Settings" }[d.t] + " page"); render(); if (d.t === "signups" && !A.signups) loadSignups(); if (d.t === "messages" && !A.msgs) loadMessages(); break;
     case "tile": { const i = +d.i; if (e.detail === 2) { A.light = i; A.lbFrom = "tv" + i; A.sel.delete(i); } else { A.sel.has(i) ? A.sel.delete(i) : A.sel.add(i); } A.confirm = false; render(); announce(`${A.sel.size} of ${A.items.length} selected`); break; }
     case "tileview": A.light = +d.i; A.lbFrom = a.id; render(); break;
     case "adnav": { const n = A.items.length; A.light = (A.light + (+d.d) + n) % n; render(); break; }
@@ -646,6 +687,10 @@ app.addEventListener("click", e => {
     case "aopen": S.light = +d.i; S.lbFrom = a.id || ""; render(); break;
     case "anav": { const n = albumList().length; S.light = (S.light + (+d.d) + n) % n; render(); break; }
     case "csv": csv(); break;
+    case "msgrefresh": A.msgs = null; render(); loadMessages(); break;
+    case "msgdel": A.msgConfirm = d.id; render(); break;
+    case "msgdelno": A.msgConfirm = null; render(); break;
+    case "msgdelyes": deleteMessage(d.id); break;
     case "toggle": {
       const on = !S.uploadsOpen;
       if (DEMO) { S.uploadsOpen = on; render(); toast(on ? "Uploads are open" : "Uploads are closed"); break; }
@@ -683,7 +728,7 @@ app.addEventListener("submit", async e => {
     const email = e.target.querySelector("#ae").value.trim(), pw = e.target.querySelector("#ap").value;
     if (!email || !pw) { A.loginErr = "Enter your email and password."; S.focusAfter = email ? "ap" : "ae"; render(); return; }
     A.loginErr = "";
-    if (DEMO) { A.user = { email }; render(); loadPhotos(); loadSignups(); return; }
+    if (DEMO) { A.user = { email }; render(); loadPhotos(); loadSignups(); loadMessages(); return; }
     try { await fb.auth().signInWithEmailAndPassword(email, pw); }
     catch (err) { A.loginErr = "Sign-in failed. Check your email and password and try again."; S.focusAfter = "ap"; render(); }
   }
@@ -702,7 +747,7 @@ if (!DEMO) {
     if (S.page === "admin") {
       const real = u && !u.isAnonymous;     // a visitor's anonymous upload identity is not an admin login
       A.user = real ? u : null; render();
-      if (real) { loadPhotos(); loadSignups(); }
+      if (real) { loadPhotos(); loadSignups(); loadMessages(); }
     } else { S.anon = u; if (!u) fb.auth().signInAnonymously().catch(() => {}); }
   });
 }
