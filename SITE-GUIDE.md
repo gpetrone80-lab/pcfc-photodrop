@@ -43,9 +43,14 @@ Links without a tag show as "direct".
 - The old `qr-code.png` is still in the repository, unchanged.
 
 ## Contact form
-Messages go to **pinellascountyfireconference@gmail.com** through formsubmit.co, the same service as the
-sign-up alerts. Replies go straight to the sender's email address. To change the address, edit
-`contactEmail` at the top of `assets/site.js`.
+Every message is saved in the database and shows up in **Admin → Messages** (reply by email or delete from there).
+It is also emailed to **pinellascountyfireconference@gmail.com** through formsubmit.co, the same service as the
+sign-up alerts. Visitors see "sent" when either one works.
+
+formsubmit.co only delivers after a one-time activation: look in that Gmail inbox (and Spam) for an email from
+FormSubmit with an **Activate Form** button and click it. Until then, emails don't arrive, but messages are still in
+Admin → Messages. The `messages` collection needs the current `firestore.rules` published in the Firebase console.
+To change the address, edit `contactEmail` at the top of `assets/site.js`.
 
 ## Updating text
 Settings at the top of `assets/site.js`:
