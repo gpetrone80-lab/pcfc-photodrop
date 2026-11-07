@@ -29,6 +29,13 @@ const CFG = {
   nextYear: "2027",
   nextDates: "Dates TBA",             // e.g. "October 25–27, 2027" once announced
   location: "Pinellas County, FL",
+  // Home page "Why firefighters come back" facts. Leave a value "" to hide it.
+  proof: {
+    attendees: "",                    // e.g. "180" firefighters at the last conference
+    departments: "",                  // e.g. "14" departments represented
+    quote: "",                        // one line from an attendee, e.g. from the survey
+    quoteBy: ""                       // e.g. "Lt. Jane Doe, Clearwater Fire & Rescue"
+  },
   albumUrl: "https://photos.app.goo.gl/PQEAafha5d4E1H9f7",
   instagram: "https://www.instagram.com/pinellascountyfireconference/",
   facebook: "https://www.facebook.com/share/1dBttD14kH/?mibextid=wwXIfr"
@@ -134,6 +141,17 @@ function footer() {
     <div><h2 class="fh">Event info</h2>${f(go("2027", "What to expect", "", "schedule"))}${f(go("2027", "Mailing list", "", "list"))}${f(go("photos", "Photo release", "", "release"))}${f(ext(CFG.albumUrl, "Full album on Google Photos"))}${f(go("admin", "Organizer sign-in"))}</div>
    </div><p class="ecopy">© ${new Date().getFullYear()} Pinellas County Fire Conference · Hosted every year in Pinellas County, Florida · Hosted by local training chiefs &amp; instructors</p></div></footer>`;
 }
+function proof() {
+  const P = CFG.proof || {}, days = (CFG.lastDates.match(/(\d+)\D+(\d+),/) || []).slice(1).map(Number);
+  const stats = [[P.attendees, "firefighters in 2026"], [P.departments, "departments"], [days.length === 2 ? String(days[1] - days[0] + 1) : "", "days of training"]].filter(([v]) => v);
+  const drills = [["Burn room evolutions", "Live fire, real heat, run by local training chiefs."], ["2 Man & A Can", "The two-person drill crews talk about all year."], ["Training tower", "Hands-on work at height, in full gear."], ["Speaker day", "Opening ceremony, color guard and speakers."]];
+  return `<div class="proof">
+   ${stats.length > 1 ? `<dl class="pstats">${stats.map(([v, l]) => `<div><dt>${esc(l)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>` : ""}
+   <p class="plede">Every year firefighters, officers and instructors from across the county train side by side, run by the people who teach them all year.</p>
+   <ul class="slist pdrills">${drills.map(([h, t]) => `<li><div><strong>${h}</strong><span>${t}</span></div></li>`).join("")}</ul>
+   ${P.quote ? `<figure class="pquote"><blockquote>“${esc(P.quote)}”</blockquote>${P.quoteBy ? `<figcaption>${esc(P.quoteBy)}</figcaption>` : ""}</figure>` : ""}
+   <div class="ectas">${go("2027", "See the full program", "btn w", "schedule")}</div></div>`;
+}
 function quickLinks() {
   return `<div class="obox"><h3>Quick links</h3><div class="qlinks">
     ${go("2027", CFG.nextYear + " Conference")}
@@ -234,20 +252,21 @@ function listForm(src) {
     <p>We'll email <b>${esc(S.email)}</b> about 6 months before the event, and whenever the dates, host, classes and speakers are announced.</p>
     <p class="fine">Help us fill the room: share this page with your crew.</p>
     <div class="sharebar"><button type="button" class="btn sm alt" data-act="copy">${I.link} Copy link</button>${ext("https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent("https://pinellascountyfireconference.com/2027/"), I.fb + " Share", "btn sm alt")}</div></div>`;
-  return `<form id="notifyForm" class="eform" data-src="${src}" novalidate>
-    <div class="field"><label for="fn">First name</label><input id="fn" autocomplete="given-name"></div>
-    <div class="field"><label for="ln">Last name</label><input id="ln" autocomplete="family-name"></div>
-    <div class="field full"><label for="em">Email (required)</label><input id="em" type="email" autocomplete="email" inputmode="email" placeholder="you@department.gov" value="${esc(S.email)}" required aria-describedby="${S.notifyErr ? "nerr " : ""}nhint"${S.notifyErr ? ' aria-invalid="true"' : ""}></div>
-    <div class="field"><label for="dept">Department / agency</label><input id="dept" autocomplete="organization" placeholder="Your department"></div>
-    <div class="field"><label for="jt">Rank / job title</label><input id="jt" autocomplete="organization-title" placeholder="Firefighter/EMT"></div>
-    <input type="text" id="hp" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+  return `<form id="notifyForm" class="eform ef1" data-src="${src}" novalidate>
+    <div class="field full"><label for="em">Email</label><input id="em" type="email" autocomplete="email" inputmode="email" placeholder="you@department.gov" value="${esc(S.email)}" required aria-describedby="${S.notifyErr ? "nerr " : ""}nhint"${S.notifyErr ? ' aria-invalid="true"' : ""}></div>
+    <details class="full emore"><summary>Add your name, department and rank (optional)</summary><div class="emgrid">
+     <div class="field"><label for="fn">First name</label><input id="fn" autocomplete="given-name"></div>
+     <div class="field"><label for="ln">Last name</label><input id="ln" autocomplete="family-name"></div>
+     <div class="field"><label for="dept">Department / agency</label><input id="dept" autocomplete="organization" placeholder="Your department"></div>
+     <div class="field"><label for="jt">Rank / job title</label><input id="jt" autocomplete="organization-title" placeholder="Firefighter/EMT"></div></div></details>
     ${S.notifyErr ? `<p class="errbox full" id="nerr" role="alert" tabindex="-1"><span aria-hidden="true">! </span>${esc(S.notifyErr)}</p>` : ""}
     <button class="btn full" type="submit" ${S.saving ? "disabled" : ""}>${S.saving ? "Saving…" : "Join the mailing list"}</button>
-    <p class="fine full" id="nhint">Only email is required. We only email about the conference. No spam, ever.</p></form>`;
+    <p class="fine full" id="nhint">One email when the dates, host and classes are announced. No spam, ever.</p>
+    <input type="text" id="hp" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"></form>`;
 }
 function listSection(src) {
   return `<section class="esec esec-light" id="list"><div class="wrap"><h2 class="ecenter">Want to attend the ${CFG.nextYear} conference?</h2>
-    <h3>Stay up to date on event information by joining our mailing list!</h3>${listForm(src)}</div></section>`;
+    <p class="elede">Be first to hear the dates, host department, classes and speakers.</p>${listForm(src)}</div></section>`;
 }
 async function subscribe(form) {
   const v = id => (form.querySelector("#" + id) || {}).value || "";
@@ -294,7 +313,8 @@ const ALBUM_PHOTOS = [["live-fire", "Live fire behind the crews · Fireground24 
 // Photos from the previous site, kept on the server and shown in the album
 const OLD_PHOTOS = [["2027/slide1.jpg", "Pinellas County Fire Conference banner"], ["2027/slide2.webp", "Live fire training"], ["2027/slide3.webp", "Turnout gear ready"]];
 function albumList() {
-  const a = S.featured.map(f => ({ src: f.url, full: f.url, cap: "Shared by an attendee", attendee: true }));
+  const n = S.featured.length;
+  const a = S.featured.map((f, i) => ({ src: f.url, full: f.url, cap: `Attendee photo ${i + 1} of ${n} from the 2026 conference`, attendee: true }));
   ALBUM_PHOTOS.forEach(([n, c]) => a.push({ src: `${IMG}${n}-800.webp`, full: `${IMG}${n}.webp`, cap: c }));
   if (!PREVIEW) OLD_PHOTOS.forEach(([f, c]) => a.push({ src: ROOT + f, full: ROOT + f, cap: c }));
   return a;
@@ -315,8 +335,7 @@ function home() {
   <section class="esec"><div class="wrap"><h2 class="ecenter">Start here</h2>
    <div class="doors">${door("2027", "instructors", CFG.nextYear + " Conference", "Dates, host, classes and the mailing list", "See what's next")}${door("photos", "two-man-can", "Share Photos", "Were you there in 2026? Upload your shots", "Upload photos")}${door("album", "crew", "2026 Photo Album", "Scenes from the training ground", "Browse photos")}</div></div></section>
   <section class="esec" id="why" style="padding-top:0"><div class="wrap"><h2 class="ecenter">Why firefighters come back every year</h2>
-   <div class="eboxes"><div class="obox"><h3>Why attend</h3><p>Every year the Pinellas County Fire Conference brings firefighters, officers and instructors from across the county together for a speaker day and live fire HOT (hands-on training) days, run by local training chiefs and instructors.</p>
-    <p>The ${CFG.nextYear} conference is being planned now. ${go("2027", "Join the mailing list", "inlink", "list")} to hear the dates, host department, classes and speakers first.</p></div>${quickLinks()}</div></div></section>
+   ${proof()}</div></section>
   ${listSection("home-page")}</main>${footer()}`;
 }
 function p2027() {
@@ -343,7 +362,7 @@ function photosPage() {
 }
 function albumPage() {
   const list = albumList(), L = S.light !== null ? list[S.light] : null, nf = S.featured.length;
-  const tile = (p, i) => `<button type="button" class="aph" id="ph${i}" data-act="aopen" data-i="${i}" aria-label="${esc(p.cap)}"><img src="${esc(p.src)}" alt="${esc(p.cap)}" loading="lazy" onerror="this.parentNode.hidden=true"></button>`;
+  const tile = (p, i) => `<button type="button" class="aph" id="ph${i}" data-act="aopen" data-i="${i}" aria-label="${esc(p.cap)}"><img src="${esc(p.src)}" alt="${esc(p.cap)}" loading="lazy" onload="this.parentNode.classList.add('ld')" onerror="this.parentNode.hidden=true"></button>`;
   return `${nav()}<main id="main" tabindex="-1">${crumb("2026 Photo Album", "2026 photo album")}
   ${nf ? `<section class="esec"><div class="wrap"><h2 class="ecenter">Shared by attendees</h2><p class="fine">Photos people uploaded on Share Photos, picked by the organizers.</p>
    <div class="agrid">${list.slice(0, nf).map(tile).join("")}</div><div class="ectas">${go("photos", "Add your photos", "btn")}</div></div></section>` : ""}
